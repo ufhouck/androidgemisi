@@ -3,7 +3,7 @@ import { storage } from '../lib/storage';
 import { PHONE_CATALOG } from '../data/phoneCatalog';
 import { scrapePhoneData } from './phoneScraping';
 import { scrapeAndAnalyzeReviews } from './reviewScraping';
-import { addPhone, updatePhone, phones } from '../data/phones';
+import { phones } from '../data/phones';
 
 // Create a queue with concurrency limit and rate limiting
 const queue = new PQueue({ 
@@ -31,35 +31,24 @@ async function processPhone(brand: string, model: string): Promise<void> {
       return;
     }
     
-    // First, get phone data
+    // Get phone data and reviews
     const phoneData = await scrapePhoneData(fullModel);
-    const existingPhone = phones.find(p => p.id === phoneId);
+    const reviews = await scrapeAndAnalyzeReviews(phoneId, fullModel);
     
-    if (existingPhone) {
-      updatePhone(phoneId, {
-        ...existingPhone,
-        ...phoneData
-      });
+    // Update phone data in memory
+    const existingPhoneIndex = phones.findIndex(p => p.id === phoneId);
+    if (existingPhoneIndex !== -1) {
+      phones[existingPhoneIndex] = {
+        ...phones[existingPhoneIndex],
+        ...phoneData,
+        reviews: reviews.length
+      };
     } else {
-      addPhone(phoneData);
+      phones.push({
+        ...phoneData,
+        reviews: reviews.length
+      });
     }
-    
-    // Then, get and analyze reviews with retries
-    let retries = 3;
-    let reviews = [];
-    
-    while (retries > 0) {
-      try {
-        reviews = await scrapeAndAnalyzeReviews(phoneId, fullModel);
-        break;
-      } catch (error) {
-        retries--;
-        if (retries === 0) throw error;
-        await new Promise(resolve => setTimeout(resolve, 5000));
-      }
-    }
-    
-    console.log(`Found ${reviews.length} reviews for ${fullModel}`);
     
     // Store last update time
     await storage.set(`${phoneId}_last_update`, now);

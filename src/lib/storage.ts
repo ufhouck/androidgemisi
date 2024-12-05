@@ -33,6 +33,40 @@ class Storage {
   async clear(): Promise<void> {
     await clear();
   }
+
+  // Yeni eklenen metodlar
+  async getAllPhones(): Promise<any[]> {
+    try {
+      const phones = await this.get<any[]>('phones') || [];
+      return phones;
+    } catch (error) {
+      console.error('Error getting phones:', error);
+      return [];
+    }
+  }
+
+  async addPhone(phone: any): Promise<void> {
+    try {
+      const phones = await this.getAllPhones();
+      phones.push(phone);
+      await this.set('phones', phones);
+    } catch (error) {
+      console.error('Error adding phone:', error);
+    }
+  }
+
+  async updatePhone(id: string, updatedPhone: any): Promise<void> {
+    try {
+      const phones = await this.getAllPhones();
+      const index = phones.findIndex(p => p.id === id);
+      if (index !== -1) {
+        phones[index] = updatedPhone;
+        await this.set('phones', phones);
+      }
+    } catch (error) {
+      console.error('Error updating phone:', error);
+    }
+  }
 }
 
 export const storage = new Storage();
