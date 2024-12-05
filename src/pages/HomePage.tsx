@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { SearchBar } from '../components/ui/SearchBar';
 import { FeaturedPhones } from '../components/home/FeaturedPhones';
 import { Brain, MessageSquare, TrendingUp, ThumbsUp } from 'lucide-react';
+import { FeatureCarousel } from '../components/home/FeatureCarousel';
+import { cn } from '../lib/utils';
 
 const searchExamples = [
   'Samsung Galaxy S24 Ultra',
@@ -10,10 +12,34 @@ const searchExamples = [
   'Xiaomi 14 Pro'
 ];
 
+const features = [
+  {
+    icon: Brain,
+    title: 'Yapay Zeka Analizi',
+    description: 'Binlerce kullanıcı yorumunu yapay zeka ile analiz ediyoruz'
+  },
+  {
+    icon: MessageSquare,
+    title: 'Gerçek Deneyimler',
+    description: 'Kullanıcı deneyimlerinden öne çıkan özellikleri belirliyoruz'
+  },
+  {
+    icon: TrendingUp,
+    title: 'Fiyat Takibi',
+    description: 'Fiyat değişimlerini anlık olarak takip ediyoruz'
+  },
+  {
+    icon: ThumbsUp,
+    title: 'Tarafsız Öneriler',
+    description: 'Yapay zeka destekli tarafsız telefon önerileri sunuyoruz'
+  }
+];
+
 export function HomePage() {
   const [searchText, setSearchText] = useState('');
   const [currentExampleIndex, setCurrentExampleIndex] = useState(0);
   const [isTyping, setIsTyping] = useState(true);
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
   useEffect(() => {
     let timeout: NodeJS.Timeout;
@@ -47,52 +73,53 @@ export function HomePage() {
 
   return (
     <main>
-      <section className="min-h-[60vh] bg-gradient-to-b from-gray-50 to-white flex items-center justify-center px-3 py-16">
+      <section className={cn(
+        "bg-gradient-to-b from-gray-50 to-white flex items-center justify-center px-3",
+        isMobile ? "py-8" : "py-16 min-h-[60vh]"
+      )}>
         <div className="container max-w-6xl">
-          <h1 className="text-3xl md:text-5xl font-bold text-gray-900 mb-6 text-center max-w-3xl mx-auto leading-tight">
+          <h1 className={cn(
+            "font-bold text-gray-900 mb-4 text-center max-w-3xl mx-auto leading-tight",
+            isMobile ? "text-2xl" : "text-3xl md:text-5xl mb-6"
+          )}>
             En İyi Android Telefonları Karşılaştırın
           </h1>
-          <p className="text-lg md:text-xl text-gray-600 mb-10 max-w-2xl mx-auto text-center">
+          <p className={cn(
+            "text-gray-600 mb-8 max-w-2xl mx-auto text-center",
+            isMobile ? "text-base" : "text-lg md:text-xl mb-10"
+          )}>
             Yapay zeka destekli kullanıcı yorumları ve güncel fiyatlarla akıllı telefon karşılaştırma platformu
           </p>
           
-          <div className="max-w-2xl mx-auto mb-16">
+          <div className={cn(
+            "mx-auto",
+            isMobile ? "mb-8" : "max-w-2xl mb-16"
+          )}>
             <SearchBar 
               placeholder={searchText}
               placeholderClassName="animate-pulse"
+              variant={isMobile ? 'compact' : 'default'}
             />
           </div>
           
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="bg-orange-50 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
-                <Brain className="h-6 w-6 text-orange-600" />
-              </div>
-              <h3 className="font-semibold mb-2 text-gray-900">Yapay Zeka Analizi</h3>
-              <p className="text-gray-600 text-sm">Binlerce kullanıcı yorumunu yapay zeka ile analiz ediyoruz</p>
+          {isMobile ? (
+            <FeatureCarousel />
+          ) : (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
+              {features.map((feature) => (
+                <div
+                  key={feature.title}
+                  className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+                >
+                  <div className="bg-orange-50 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
+                    <feature.icon className="h-6 w-6 text-orange-600" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-2">{feature.title}</h3>
+                  <p className="text-sm text-gray-600">{feature.description}</p>
+                </div>
+              ))}
             </div>
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="bg-orange-50 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
-                <MessageSquare className="h-6 w-6 text-orange-600" />
-              </div>
-              <h3 className="font-semibold mb-2 text-gray-900">Gerçek Deneyimler</h3>
-              <p className="text-gray-600 text-sm">Kullanıcı deneyimlerinden öne çıkan özellikleri belirliyoruz</p>
-            </div>
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="bg-orange-50 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
-                <TrendingUp className="h-6 w-6 text-orange-600" />
-              </div>
-              <h3 className="font-semibold mb-2 text-gray-900">Fiyat Takibi</h3>
-              <p className="text-gray-600 text-sm">Fiyat değişimlerini anlık olarak takip ediyoruz</p>
-            </div>
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-              <div className="bg-orange-50 w-12 h-12 rounded-xl flex items-center justify-center mb-4">
-                <ThumbsUp className="h-6 w-6 text-orange-600" />
-              </div>
-              <h3 className="font-semibold mb-2 text-gray-900">Tarafsız Öneriler</h3>
-              <p className="text-gray-600 text-sm">Yapay zeka destekli tarafsız telefon önerileri sunuyoruz</p>
-            </div>
-          </div>
+          )}
         </div>
       </section>
 

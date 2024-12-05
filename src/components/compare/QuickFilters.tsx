@@ -1,167 +1,166 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Filter, Smartphone, Cpu, HardDrive, Battery, ChevronDown, ChevronUp, Search, X, DollarSign } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Filter as FilterIcon, ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { cn } from '../../lib/utils';
-
-interface FilterOption {
-  value: string;
-  label: string;
-}
-
-interface QuickFilter {
-  id: string;
-  label: string;
-  icon: React.ReactNode;
-  options: { value: string; label: string }[];
-}
-
-const quickFilters: QuickFilter[] = [
-  {
-    id: 'price',
-    label: 'Fiyat',
-    icon: <DollarSign className="h-4 w-4" />,
-    options: [
-      { value: '0-10000', label: '10.000 ₺ altı' },
-      { value: '10000-20000', label: '10.000 ₺ - 20.000 ₺' },
-      { value: '20000-30000', label: '20.000 ₺ - 30.000 ₺' },
-      { value: '30000-50000', label: '30.000 ₺ - 50.000 ₺' },
-      { value: '50000-plus', label: '50.000 ₺ üzeri' },
-    ]
-  },
-  {
-    id: 'brand',
-    label: 'Marka',
-    icon: <Smartphone className="h-4 w-4" />,
-    options: [
-      { value: 'samsung', label: 'Samsung' },
-      { value: 'xiaomi', label: 'Xiaomi' },
-      { value: 'google', label: 'Google' },
-      { value: 'oneplus', label: 'OnePlus' },
-      { value: 'honor', label: 'Honor' },
-      { value: 'tecno', label: 'Tecno' },
-      { value: 'reeder', label: 'Reeder' },
-    ]
-  },
-  {
-    id: 'processor',
-    label: 'İşlemci',
-    icon: <Cpu className="h-4 w-4" />,
-    options: [
-      { value: 'snapdragon-8-gen-3', label: 'Snapdragon 8 Gen 3' },
-      { value: 'dimensity-9300', label: 'Dimensity 9300' },
-      { value: 'tensor-g3', label: 'Google Tensor G3' },
-      { value: 'dimensity-7200', label: 'Dimensity 7200' },
-      { value: 'helio-g99', label: 'Helio G99' },
-      { value: 'helio-g85', label: 'Helio G85' },
-    ]
-  },
-  {
-    id: 'ram',
-    label: 'RAM',
-    icon: <HardDrive className="h-4 w-4" />,
-    options: [
-      { value: '6gb', label: '6 GB' },
-      { value: '8gb', label: '8 GB' },
-      { value: '12gb', label: '12 GB' },
-      { value: '16gb', label: '16 GB' },
-    ]
-  },
-  {
-    id: 'battery',
-    label: 'Batarya',
-    icon: <Battery className="h-4 w-4" />,
-    options: [
-      { value: '4000-5000', label: '4000-5000 mAh' },
-      { value: '5000+', label: '5000+ mAh' },
-    ]
-  },
-];
+import { FilterModal } from './FilterModal';
+import { getFilterConfig } from '../../config/filterConfig';
 
 interface QuickFiltersProps {
   selectedFilters: { [key: string]: string[] };
   onFilterChange: (filterId: string, value: string) => void;
   onResetFilters: () => void;
+  sorting: string;
+  onSortingChange: (value: string) => void;
 }
 
-export function QuickFilters({ selectedFilters, onFilterChange, onResetFilters }: QuickFiltersProps) {
+export function QuickFilters({ 
+  selectedFilters, 
+  onFilterChange, 
+  onResetFilters,
+  sorting,
+  onSortingChange
+}: QuickFiltersProps) {
   const [expandedFilter, setExpandedFilter] = useState<string | null>(null);
   const [searchQueries, setSearchQueries] = useState<{ [key: string]: string }>({});
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [activeModalFilter, setActiveModalFilter] = useState<string | null>(null);
   const filterRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-  const hasActiveFilters = Object.values(selectedFilters).some(filters => filters.length > 0);
+  const { mainFilters, additionalFilters } = getFilterConfig(isMobile);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (expandedFilter && !filterRefs.current[expandedFilter]?.contains(event.target as Node)) {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Node;
+      const isDropdownClick = dropdownRef.current?.contains(target);
+      const isFilterClick = expandedFilter && filterRefs.current[expandedFilter]?.contains(target);
+
+      // Don't close if clicking inside dropdown or filter button
+      if (!isDropdownClick && !isFilterClick) {
         setExpandedFilter(null);
       }
-    };
+    }
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [expandedFilter]);
 
-  const handleFilterMouseEnter = (filterId: string) => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    setExpandedFilter(filterId);
-    setSearchQueries(prev => ({ ...prev, [filterId]: '' }));
-  };
+  const handleFilterClick = (filterId: string, event: React.MouseEvent) => {
+    // Prevent event from bubbling up
+    event.stopPropagation();
 
-  const handleFilterMouseLeave = () => {
-    timeoutRef.current = setTimeout(() => {
-      setExpandedFilter(null);
-    }, 300);
-  };
-
-  const handleDropdownMouseEnter = () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
+    if (isMobile) {
+      setActiveModalFilter(filterId);
+      setShowFilterModal(true);
+    } else {
+      setExpandedFilter(expandedFilter === filterId ? null : filterId);
+      setSearchQueries(prev => ({ ...prev, [filterId]: '' }));
     }
   };
 
-  const handleDropdownMouseLeave = () => {
-    timeoutRef.current = setTimeout(() => {
-      setExpandedFilter(null);
-    }, 300);
+  const handleCheckboxChange = (filterId: string, value: string, event: React.MouseEvent) => {
+    // Prevent event from bubbling up
+    event.stopPropagation();
+    onFilterChange(filterId, value);
   };
 
-  const handleSearchChange = (filterId: string, query: string) => {
-    setSearchQueries(prev => ({ ...prev, [filterId]: query }));
-  };
-
-  const getFilteredOptions = (filter: QuickFilter) => {
+  const renderFilterContent = (filter: any) => {
     const searchQuery = searchQueries[filter.id]?.toLowerCase() || '';
-    if (!searchQuery) return filter.options;
-
-    return filter.options.filter(option =>
+    const filteredOptions = filter.options.filter((option: any) =>
       option.label.toLowerCase().includes(searchQuery)
+    );
+
+    return (
+      <div className="space-y-0.5">
+        {!isMobile && (
+          <div className="relative mb-2" onClick={e => e.stopPropagation()}>
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              value={searchQueries[filter.id] || ''}
+              onChange={(e) => setSearchQueries(prev => ({ ...prev, [filter.id]: e.target.value }))}
+              placeholder={`${filter.label} ara...`}
+              className="w-full pl-8 pr-3 py-1.5 text-sm bg-gray-50 border rounded-md focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
+            />
+          </div>
+        )}
+
+        <div className={cn(
+          "space-y-0.5",
+          isMobile ? "px-2" : "max-h-60 overflow-y-auto"
+        )}>
+          {filteredOptions.map((option: any) => (
+            <label
+              key={option.value}
+              className={cn(
+                "flex items-center space-x-2 rounded-md cursor-pointer",
+                isMobile ? "py-3 border-b border-gray-100" : "px-3 py-2 hover:bg-gray-50",
+                selectedFilters[filter.id]?.includes(option.value) && "bg-orange-50 text-orange-600"
+              )}
+              onClick={e => e.stopPropagation()}
+            >
+              <input
+                type="checkbox"
+                checked={selectedFilters[filter.id]?.includes(option.value) || false}
+                onChange={(e) => handleCheckboxChange(filter.id, option.value, e as any)}
+                className="rounded text-orange-500 focus:ring-orange-500"
+              />
+              <span className="text-sm">{option.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
     );
   };
 
+  const hasAdditionalFilters = Object.entries(selectedFilters)
+    .filter(([key]) => additionalFilters.some(f => f.id === key))
+    .some(([_, values]) => values.length > 0);
+
   return (
-    <div className="bg-gray-50 rounded-lg p-2">
-      <div className="flex flex-wrap items-center gap-2">
-        {quickFilters.map((filter) => (
-          <div 
-            key={filter.id} 
+    <div className="bg-white rounded-xl border border-gray-200 p-3">
+      <div className={cn(
+        "flex items-center gap-2",
+        isMobile ? "flex-nowrap overflow-x-auto no-scrollbar" : "flex-wrap"
+      )}>
+        {/* Sorting Filter */}
+        <div className="flex-none">
+          <select
+            value={sorting}
+            onChange={(e) => onSortingChange(e.target.value)}
+            className={cn(
+              "bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500",
+              isMobile ? "text-xs py-1 pl-2 pr-6" : "text-sm py-1.5 pl-2 pr-8"
+            )}
+          >
+            <option value="price-asc">En Düşük Fiyat</option>
+            <option value="price-desc">En Yüksek Fiyat</option>
+            <option value="rating-desc">En Yüksek Puan</option>
+            <option value="rating-asc">En Düşük Puan</option>
+          </select>
+        </div>
+
+        {/* Main Filters */}
+        {mainFilters.map((filter) => (
+          <div
+            key={filter.id}
             ref={el => filterRefs.current[filter.id] = el}
-            className="relative"
-            onMouseEnter={() => handleFilterMouseEnter(filter.id)}
-            onMouseLeave={handleFilterMouseLeave}
+            className="relative flex-none"
           >
             <button
+              onClick={(e) => handleFilterClick(filter.id, e)}
               className={cn(
-                "flex items-center space-x-2 px-3 py-1.5 rounded-lg text-sm whitespace-nowrap bg-white border shadow-sm",
-                "hover:bg-gray-50 transition-colors",
-                expandedFilter === filter.id && "border-orange-500 bg-orange-50",
-                Object.keys(selectedFilters).includes(filter.id) && 
-                selectedFilters[filter.id].length > 0 && 
-                "border-orange-200 bg-orange-50 text-orange-600"
+                "flex items-center space-x-1.5 border rounded-lg transition-colors whitespace-nowrap",
+                isMobile ? "px-2 py-1 text-xs" : "px-3 py-1.5 text-sm",
+                expandedFilter === filter.id
+                  ? "border-orange-500 bg-orange-50"
+                  : "border-gray-200 hover:border-gray-300 bg-white",
+                selectedFilters[filter.id]?.length > 0 && "border-orange-200 bg-orange-50 text-orange-600"
               )}
             >
-              {filter.icon}
+              <filter.icon className={cn(
+                isMobile ? "h-3 w-3" : "h-4 w-4"
+              )} />
               <span>{filter.label}</span>
               {selectedFilters[filter.id]?.length > 0 && (
                 <span className="ml-1 px-1.5 py-0.5 bg-orange-100 text-orange-600 rounded-full text-xs">
@@ -169,73 +168,109 @@ export function QuickFilters({ selectedFilters, onFilterChange, onResetFilters }
                 </span>
               )}
               {expandedFilter === filter.id ? (
-                <ChevronUp className="h-4 w-4 ml-1" />
+                <ChevronUp className="h-4 w-4" />
               ) : (
-                <ChevronDown className="h-4 w-4 ml-1" />
+                <ChevronDown className="h-4 w-4" />
               )}
             </button>
-            
-            {expandedFilter === filter.id && (
+
+            {!isMobile && expandedFilter === filter.id && (
               <div 
+                ref={dropdownRef}
                 className="absolute left-0 top-full mt-1 bg-white rounded-lg shadow-lg border z-50 min-w-[240px]"
-                onMouseEnter={handleDropdownMouseEnter}
-                onMouseLeave={handleDropdownMouseLeave}
+                onClick={e => e.stopPropagation()}
               >
                 <div className="p-2">
-                  {filter.id !== 'price' && (
-                    <div className="relative mb-2">
-                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                      <input
-                        type="text"
-                        value={searchQueries[filter.id] || ''}
-                        onChange={(e) => handleSearchChange(filter.id, e.target.value)}
-                        placeholder={`${filter.label} ara...`}
-                        className="w-full pl-8 pr-3 py-1.5 text-sm bg-gray-50 border rounded-md focus:outline-none focus:ring-1 focus:ring-orange-500 focus:border-orange-500"
-                      />
-                    </div>
-                  )}
-
-                  <div className="space-y-0.5 max-h-60 overflow-y-auto">
-                    {getFilteredOptions(filter).map((option) => (
-                      <label
-                        key={option.value}
-                        className={cn(
-                          "flex items-center space-x-2 px-3 py-2 rounded-md hover:bg-gray-50 cursor-pointer",
-                          selectedFilters[filter.id]?.includes(option.value) && 
-                          "bg-orange-50 text-orange-600"
-                        )}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedFilters[filter.id]?.includes(option.value) || false}
-                          onChange={() => onFilterChange(filter.id, option.value)}
-                          className="rounded text-orange-500 focus:ring-orange-500"
-                        />
-                        <span className="text-sm">{option.label}</span>
-                      </label>
-                    ))}
-                    {getFilteredOptions(filter).length === 0 && (
-                      <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                        Sonuç bulunamadı
-                      </div>
-                    )}
-                  </div>
+                  {renderFilterContent(filter)}
                 </div>
               </div>
             )}
           </div>
         ))}
 
-        {hasActiveFilters && (
+        {/* Additional Filters Button */}
+        <div className="relative flex-none">
           <button
-            onClick={onResetFilters}
-            className="flex items-center space-x-1 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+            onClick={(e) => handleFilterClick('additional', e)}
+            className={cn(
+              "flex items-center space-x-1.5 border rounded-lg transition-colors whitespace-nowrap",
+              isMobile ? "px-2 py-1 text-xs" : "px-3 py-1.5 text-sm",
+              expandedFilter === 'additional'
+                ? "border-orange-500 bg-orange-50"
+                : "border-gray-200 hover:border-gray-300 bg-white",
+              hasAdditionalFilters && "border-orange-200 bg-orange-50 text-orange-600"
+            )}
           >
-            <X className="h-4 w-4" />
-            <span>Filtreleri Temizle</span>
+            <FilterIcon className={cn(
+              isMobile ? "h-3 w-3" : "h-4 w-4"
+            )} />
+            <span>Diğer</span>
+            {hasAdditionalFilters && (
+              <span className="ml-1 px-1.5 py-0.5 bg-orange-100 text-orange-600 rounded-full text-xs">
+                {Object.entries(selectedFilters)
+                  .filter(([key]) => additionalFilters.some(f => f.id === key))
+                  .reduce((acc, [_, values]) => acc + values.length, 0)}
+              </span>
+            )}
+            {expandedFilter === 'additional' ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
           </button>
-        )}
+
+          {!isMobile && expandedFilter === 'additional' && (
+            <div 
+              ref={dropdownRef}
+              className="absolute left-0 top-full mt-1 bg-white rounded-lg shadow-lg border z-50 min-w-[240px]"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="p-2 space-y-4">
+                {additionalFilters.map((filter) => (
+                  <div key={filter.id}>
+                    <div className="flex items-center space-x-2 px-3 mb-2">
+                      <filter.icon className="h-4 w-4" />
+                      <span className="font-medium text-sm">{filter.label}</span>
+                    </div>
+                    {renderFilterContent(filter)}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Mobile Filter Modal */}
+      {isMobile && showFilterModal && (
+        <FilterModal
+          isOpen={showFilterModal}
+          onClose={() => {
+            setShowFilterModal(false);
+            setActiveModalFilter(null);
+          }}
+          title={activeModalFilter === 'additional' 
+            ? 'Diğer Filtreler'
+            : mainFilters.find(f => f.id === activeModalFilter)?.label || ''
+          }
+        >
+          {activeModalFilter === 'additional' ? (
+            <div className="space-y-6">
+              {additionalFilters.map((filter) => (
+                <div key={filter.id}>
+                  <div className="flex items-center space-x-2 mb-3">
+                    <filter.icon className="h-4 w-4" />
+                    <span className="font-medium">{filter.label}</span>
+                  </div>
+                  {renderFilterContent(filter)}
+                </div>
+              ))}
+            </div>
+          ) : (
+            renderFilterContent(mainFilters.find(f => f.id === activeModalFilter))
+          )}
+        </FilterModal>
+      )}
     </div>
   );
 }

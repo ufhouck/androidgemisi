@@ -4,16 +4,19 @@ import { QuickFilters } from '../components/compare/QuickFilters';
 import { FilterChips } from '../components/compare/FilterChips';
 import { PhoneCard } from '../components/compare/PhoneCard';
 import { ComparisonDrawer } from '../components/compare/ComparisonDrawer';
+import { cn } from '../lib/utils';
 
 export function ComparePage() {
   const [selectedPhones, setSelectedPhones] = useState<string[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [sorting, setSorting] = useState('price-asc');
   const [quickFilters, setQuickFilters] = useState<{ [key: string]: string[] }>({
     price: [],
     brand: [],
     processor: [],
     ram: [],
-    battery: []
+    battery: [],
+    storage: []
   });
 
   const filterLabels = {
@@ -47,6 +50,12 @@ export function ComparePage() {
       '12gb': '12 GB',
       '16gb': '16 GB',
     },
+    storage: {
+      '128gb': '128 GB',
+      '256gb': '256 GB',
+      '512gb': '512 GB',
+      '1tb': '1 TB',
+    },
     battery: {
       '4000-5000': '4000-5000 mAh',
       '5000+': '5000+ mAh',
@@ -54,7 +63,7 @@ export function ComparePage() {
   };
 
   const filteredPhones = useMemo(() => {
-    return phones.filter(phone => {
+    let result = phones.filter(phone => {
       // Price filter
       if (quickFilters.price.length > 0) {
         const phonePrice = parseInt(phone.price.tr.replace(/[^0-9]/g, ''));
@@ -72,6 +81,14 @@ export function ComparePage() {
       if (quickFilters.brand.length > 0) {
         const phoneBrand = phone.name.split(' ')[0].toLowerCase();
         if (!quickFilters.brand.some(brand => phoneBrand.includes(brand))) {
+          return false;
+        }
+      }
+
+      // Storage filter
+      if (quickFilters.storage.length > 0) {
+        const phoneStorage = phone.specs.storage.toLowerCase();
+        if (!quickFilters.storage.some(storage => phoneStorage.includes(storage.replace('gb', '')))) {
           return false;
         }
       }
@@ -115,7 +132,27 @@ export function ComparePage() {
 
       return true;
     });
-  }, [quickFilters]);
+
+    // Apply sorting
+    if (sorting) {
+      result = [...result].sort((a, b) => {
+        switch (sorting) {
+          case 'price-asc':
+            return parseInt(a.price.tr.replace(/[^0-9]/g, '')) - parseInt(b.price.tr.replace(/[^0-9]/g, ''));
+          case 'price-desc':
+            return parseInt(b.price.tr.replace(/[^0-9]/g, '')) - parseInt(a.price.tr.replace(/[^0-9]/g, ''));
+          case 'rating-desc':
+            return b.rating - a.rating;
+          case 'rating-asc':
+            return a.rating - b.rating;
+          default:
+            return 0;
+        }
+      });
+    }
+
+    return result;
+  }, [quickFilters, sorting]);
 
   const handlePhoneSelect = (phoneId: string) => {
     if (selectedPhones.includes(phoneId)) {
@@ -151,21 +188,29 @@ export function ComparePage() {
       brand: [],
       processor: [],
       ram: [],
-      battery: []
+      battery: [],
+      storage: []
     });
+    setSorting('price-asc');
   };
 
   const selectedPhonesData = phones.filter(phone => selectedPhones.includes(phone.id));
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
   return (
     <main className="container mx-auto px-4 py-4">
       <div className="mb-4">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-4">Android Telefonlar</h1>
+        <h1 className={cn(
+          "font-bold mb-4",
+          isMobile ? "text-xl" : "text-2xl sm:text-3xl"
+        )}>Android Telefonlar</h1>
         <div className="space-y-3">
           <QuickFilters
             selectedFilters={quickFilters}
             onFilterChange={handleFilterChange}
             onResetFilters={handleResetFilters}
+            sorting={sorting}
+            onSortingChange={setSorting}
           />
           <FilterChips
             selectedFilters={quickFilters}
@@ -181,13 +226,19 @@ export function ComparePage() {
           <p className="text-gray-600">Farklı filtreler deneyebilir veya tüm telefonları görebilirsiniz.</p>
           <button
             onClick={handleResetFilters}
-            className="mt-3 px-6 py-2 bg-orange-600 text-white rounded-full hover:bg-orange-700 transition-colors"
+            className={cn(
+              "mt-3 bg-orange-600 text-white rounded-full hover:bg-orange-700 transition-colors",
+              isMobile ? "px-4 py-1.5 text-sm" : "px-6 py-2"
+            )}
           >
             Tüm Telefonları Göster
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className={cn(
+          "grid gap-4",
+          isMobile ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+        )}>
           {filteredPhones.map((phone) => (
             <PhoneCard
               key={phone.id}
@@ -195,6 +246,7 @@ export function ComparePage() {
               isSelected={selectedPhones.includes(phone.id)}
               onSelect={handlePhoneSelect}
               disabled={selectedPhones.length >= 3 && !selectedPhones.includes(phone.id)}
+              variant={isMobile ? 'compact' : 'default'}
             />
           ))}
         </div>
@@ -206,6 +258,7 @@ export function ComparePage() {
           onRemovePhone={(id) => handlePhoneSelect(id)}
           isOpen={isDrawerOpen}
           onToggle={() => setIsDrawerOpen(!isDrawerOpen)}
+          variant={isMobile ? 'compact' : 'default'}
         />
       )}
     </main>

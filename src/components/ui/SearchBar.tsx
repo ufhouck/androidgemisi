@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Search, Loader2, Star, MessageSquare, Clock, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useSearch } from '../../hooks/useSearch';
@@ -10,12 +10,16 @@ interface SearchBarProps {
   placeholder?: string;
   placeholderClassName?: string;
   onResultClick?: () => void;
+  variant?: 'default' | 'compact';
 }
 
-// Get top 4 phones by rating
-const getTopPhones = () => {
-  return [...phones]
+const getRandomTopPhones = () => {
+  const topPhones = [...phones]
     .sort((a, b) => b.rating - a.rating)
+    .slice(0, 8);
+
+  return topPhones
+    .sort(() => Math.random() - 0.5)
     .slice(0, 4)
     .map(phone => ({
       id: phone.id,
@@ -30,7 +34,8 @@ export function SearchBar({
   className, 
   placeholder = "Telefon modeli ara...", 
   placeholderClassName,
-  onResultClick 
+  onResultClick,
+  variant = 'default'
 }: SearchBarProps) {
   const [focused, setFocused] = useState(false);
   const { query, setQuery, results, isLoading, recentSearches, clearRecentSearches } = useSearch();
@@ -39,7 +44,9 @@ export function SearchBar({
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-  const topPhones = getTopPhones();
+  const isCompact = variant === 'compact' || isMobile;
+
+  const suggestedPhones = useMemo(() => getRandomTopPhones(), [showResults]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -81,16 +88,16 @@ export function SearchBar({
     <div ref={searchRef} className={cn("relative w-full", className)}>
       <div 
         className={cn(
-          "flex items-center gap-3 bg-white rounded-full transition-all duration-200 cursor-text",
+          "flex items-center gap-2 bg-white rounded-full transition-all duration-200 cursor-text",
           focused 
             ? "border border-orange-500" 
             : "border border-gray-200 hover:border-gray-300",
-          isMobile ? "px-4 py-2.5" : "px-5 py-3.5"
+          isCompact ? "px-3 py-2" : "px-5 py-3.5"
         )}
         onClick={() => inputRef.current?.focus()}
       >
         <Search className={cn(
-          "h-5 w-5",
+          isCompact ? "h-4 w-4" : "h-5 w-5",
           focused ? "text-orange-600" : "text-gray-400"
         )} />
         
@@ -103,7 +110,10 @@ export function SearchBar({
             setShowResults(true);
           }}
           onKeyDown={handleKeyDown}
-          className="flex-1 bg-transparent outline-none text-base placeholder:text-gray-400"
+          className={cn(
+            "flex-1 bg-transparent outline-none placeholder:text-gray-400",
+            isCompact ? "text-sm" : "text-base"
+          )}
           placeholder={placeholder}
           onFocus={() => {
             setFocused(true);
@@ -111,13 +121,20 @@ export function SearchBar({
           }}
         />
 
-        {isLoading && <Loader2 className="h-5 w-5 animate-spin text-gray-400" />}
+        {isLoading && (
+          <Loader2 className={cn(
+            "animate-spin text-gray-400",
+            isCompact ? "h-4 w-4" : "h-5 w-5"
+          )} />
+        )}
       </div>
 
       {showResults && (
         <div className={cn(
           "absolute left-0 right-0 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 divide-y divide-gray-100",
-          isMobile ? "top-[calc(100%+0.5rem)] max-h-[70vh]" : "top-full mt-2 max-h-[60vh]",
+          isCompact 
+            ? "top-[calc(100%+0.5rem)] max-h-[80vh]" 
+            : "top-full mt-2 max-h-[60vh]",
           "overflow-y-auto overscroll-contain"
         )}>
           {query ? (
@@ -126,25 +143,46 @@ export function SearchBar({
                 {results.map((result) => (
                   <button
                     key={result.id}
-                    className="w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors"
+                    className={cn(
+                      "w-full text-left hover:bg-gray-50 transition-colors",
+                      isCompact ? "px-3 py-2" : "px-4 py-3"
+                    )}
                     onClick={() => handleResultClick(result.name)}
                   >
-                    <div className="flex justify-between items-start mb-1.5">
-                      <div>
-                        <p className="font-medium">{result.name}</p>
-                        <p className="text-sm text-gray-600">{result.specs.processor}</p>
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className={cn(
+                          "font-medium truncate",
+                          isCompact ? "text-sm" : "text-base"
+                        )}>{result.name}</p>
+                        <p className={cn(
+                          "text-gray-600 truncate",
+                          isCompact ? "text-xs" : "text-sm"
+                        )}>{result.specs.processor}</p>
                       </div>
-                      <span className="text-orange-600 font-semibold text-sm">
+                      <span className={cn(
+                        "text-orange-600 font-semibold whitespace-nowrap",
+                        isCompact ? "text-xs" : "text-sm"
+                      )}>
                         {result.price.tr}
                       </span>
                     </div>
-                    <div className="flex items-center gap-3 text-sm text-gray-500">
+                    <div className={cn(
+                      "flex items-center gap-3 text-gray-500 mt-1",
+                      isCompact ? "text-xs" : "text-sm"
+                    )}>
                       <div className="flex items-center">
-                        <Star className="h-4 w-4 text-yellow-400 fill-current mr-1" />
+                        <Star className={cn(
+                          "text-yellow-400 fill-current mr-1",
+                          isCompact ? "h-3 w-3" : "h-4 w-4"
+                        )} />
                         <span>{result.reviews.rating.toFixed(1)}</span>
                       </div>
                       <div className="flex items-center">
-                        <MessageSquare className="h-4 w-4 mr-1" />
+                        <MessageSquare className={cn(
+                          "mr-1",
+                          isCompact ? "h-3 w-3" : "h-4 w-4"
+                        )} />
                         <span>{result.reviews.count} yorum</span>
                       </div>
                     </div>
@@ -152,7 +190,10 @@ export function SearchBar({
                 ))}
               </div>
             ) : (
-              <div className="px-4 py-8 text-center">
+              <div className={cn(
+                "text-center",
+                isCompact ? "px-3 py-6" : "px-4 py-8"
+              )}>
                 <p className="text-gray-500 mb-2">Sonuç bulunamadı</p>
                 <button
                   onClick={handleSearch}
@@ -163,53 +204,88 @@ export function SearchBar({
               </div>
             )
           ) : (
-            <div className="p-4">
+            <div className={cn(
+              "divide-y divide-gray-100",
+              isCompact ? "p-3" : "p-4"
+            )}>
               {recentSearches.length > 0 && (
-                <div className="mb-6">
+                <div className="mb-4">
                   <div className="flex items-center justify-between mb-2">
-                    <div className="text-xs font-medium text-gray-400">
+                    <div className={cn(
+                      "font-medium text-gray-400",
+                      isCompact ? "text-[10px]" : "text-xs"
+                    )}>
                       SON ARAMALAR
                     </div>
                     <button
                       onClick={clearRecentSearches}
-                      className="text-xs text-gray-400 hover:text-gray-600"
+                      className={cn(
+                        "text-gray-400 hover:text-gray-600",
+                        isCompact ? "text-[10px]" : "text-xs"
+                      )}
                     >
                       Temizle
                     </button>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     {recentSearches.map((search, index) => (
                       <button
                         key={index}
-                        className="w-full flex items-center px-3 py-2 text-sm text-gray-600 hover:bg-orange-50 rounded-lg transition-colors"
+                        className={cn(
+                          "w-full flex items-center text-gray-600 hover:bg-orange-50 rounded-lg transition-colors",
+                          isCompact ? "px-2 py-1.5 text-xs" : "px-3 py-2 text-sm"
+                        )}
                         onClick={() => handleResultClick(search)}
                       >
-                        <Clock className="h-4 w-4 mr-2 text-gray-400" />
-                        <span>{search}</span>
+                        <Clock className={cn(
+                          "mr-2 text-gray-400",
+                          isCompact ? "h-3 w-3" : "h-4 w-4"
+                        )} />
+                        <span className="truncate">{search}</span>
                       </button>
                     ))}
                   </div>
                 </div>
               )}
 
-              <div>
-                <div className="text-xs font-medium text-gray-400 mb-2">
-                  EN ÇOK BEĞENİLEN TELEFONLAR
+              <div className={cn(
+                recentSearches.length > 0 && "pt-4"
+              )}>
+                <div className={cn(
+                  "font-medium text-gray-400 mb-2",
+                  isCompact ? "text-[10px]" : "text-xs"
+                )}>
+                  POPÜLER TELEFONLAR
                 </div>
-                <div className="space-y-1">
-                  {topPhones.map((phone) => (
+                <div className="space-y-0.5">
+                  {suggestedPhones.map((phone) => (
                     <button
                       key={phone.id}
-                      className="w-full px-3 py-2 text-left hover:bg-orange-50 rounded-lg transition-colors"
+                      className={cn(
+                        "w-full text-left hover:bg-orange-50 rounded-lg transition-colors",
+                        isCompact ? "px-2 py-1.5" : "px-3 py-2"
+                      )}
                       onClick={() => handleResultClick(phone.name)}
                     >
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="font-medium text-gray-900">{phone.name}</p>
-                          <p className="text-sm text-gray-500">{phone.specs.processor}</p>
+                      <div className="flex justify-between items-center gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className={cn(
+                            "font-medium text-gray-900 truncate",
+                            isCompact ? "text-xs" : "text-sm"
+                          )}>{phone.name}</p>
+                          <p className={cn(
+                            "text-gray-500 truncate",
+                            isCompact ? "text-[10px]" : "text-xs"
+                          )}>{phone.specs.processor}</p>
                         </div>
-                        <div className="flex items-center text-sm">
-                          <Star className="h-4 w-4 text-yellow-400 fill-current mr-1" />
+                        <div className={cn(
+                          "flex items-center text-sm whitespace-nowrap",
+                          isCompact ? "text-xs" : "text-sm"
+                        )}>
+                          <Star className={cn(
+                            "text-yellow-400 fill-current mr-1",
+                            isCompact ? "h-3 w-3" : "h-4 w-4"
+                          )} />
                           <span className="font-medium">{phone.rating.toFixed(1)}</span>
                         </div>
                       </div>

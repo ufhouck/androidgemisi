@@ -57,6 +57,12 @@ function getReviewSummary(rating: number, count: number): string {
   return "İyileştirmeye açık";
 }
 
+// Verify if a phone exists in our database
+function phoneExists(name: string): boolean {
+  const normalizedName = normalizeText(name);
+  return phones.some(phone => normalizeText(phone.name) === normalizedName);
+}
+
 export function useSearch() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -67,13 +73,17 @@ export function useSearch() {
     async function loadRecentSearches() {
       const saved = await storage.get<string[]>(RECENT_SEARCHES_KEY);
       if (saved && Array.isArray(saved)) {
-        setRecentSearches(saved);
+        // Filter out any searches that don't match existing phones
+        const validSearches = saved.filter(search => phoneExists(search));
+        setRecentSearches(validSearches);
       }
     }
     loadRecentSearches();
   }, []);
 
   const addToRecentSearches = async (searchTerm: string) => {
+    if (!phoneExists(searchTerm)) return;
+
     const newSearches = [
       searchTerm,
       ...recentSearches.filter(s => s !== searchTerm)
