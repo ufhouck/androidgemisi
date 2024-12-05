@@ -1,6 +1,20 @@
 User-agent: *
 Allow: /
 Disallow: /admin/
-Disallow: /admin/*
+Disallow: /api/
 
+# Sitemap
 Sitemap: https://androidgemisi.com/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 10
+
+# Allow image indexing
+Allow: /images/
+Allow: /*.jpg$
+Allow: /*.png$
+Allow: /*.webp$
+
+# Block certain parameters
+Disallow: /*?ref=
+Disallow: /*&ref=

@@ -11,16 +11,25 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom'],
-          worker: ['web-worker', 'compromise']
+          worker: ['web-worker', 'compromise'],
+          ui: ['lucide-react', 'clsx', 'tailwind-merge'],
+          data: ['idb-keyval', 'node-cache']
         },
       },
     },
+    chunkSizeWarningLimit: 1000,
+    sourcemap: true
   },
   worker: {
     format: 'es',
     plugins: () => [react()]
   },
   server: {
-    historyApiFallback: true,
-  },
+    hmr: {
+      overlay: false
+    },
+    watch: {
+      usePolling: true
+    }
+  }
 });
