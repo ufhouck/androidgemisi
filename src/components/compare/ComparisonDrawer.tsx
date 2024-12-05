@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { X, ChevronUp, ChevronDown, Plus } from 'lucide-react';
 import { Phone } from '../../types/phone';
 import { cn } from '../../lib/utils';
 import { ComparisonModal } from './ComparisonModal';
+import { getPhoneBasePrice } from '../../lib/services/priceScrapingService';
 
 interface ComparisonDrawerProps {
   selectedPhones: Phone[];
@@ -19,7 +20,7 @@ export function ComparisonDrawer({
   onToggle,
   variant = 'default'
 }: ComparisonDrawerProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
   const isCompact = variant === 'compact';
 
   return (
@@ -32,7 +33,7 @@ export function ComparisonDrawer({
           onClick={onToggle}
           className={cn(
             "absolute -top-8 left-1/2 -translate-x-1/2 bg-orange-600 text-white rounded-t-lg flex items-center space-x-1.5 shadow-lg hover:bg-orange-700",
-            isCompact ? "px-2.5 py-1 text-xs" : "px-3 sm:px-4 py-1.5 text-sm"
+            isCompact ? "px-2.5 py-1.5 text-xs" : "px-3 sm:px-4 py-2 text-sm"
           )}
         >
           <span>Karşılaştır ({selectedPhones.length})</span>
@@ -49,7 +50,7 @@ export function ComparisonDrawer({
         
         <div className={cn(
           "container mx-auto",
-          isCompact ? "px-2 py-1.5" : "px-2 sm:px-4 py-2"
+          isCompact ? "px-2 py-2" : "px-2 sm:px-4 py-3"
         )}>
           <div className={cn(
             "flex items-stretch",
@@ -77,7 +78,7 @@ export function ComparisonDrawer({
                   <p className={cn(
                     "text-orange-600 font-semibold mt-0.5",
                     isCompact ? "text-xs" : "text-sm"
-                  )}>{phone.price.tr}</p>
+                  )}>{getPhoneBasePrice(phone.name)}</p>
                 </div>
               </div>
             ))}
@@ -106,13 +107,13 @@ export function ComparisonDrawer({
           {selectedPhones.length >= 2 && (
             <div className={cn(
               "flex justify-center",
-              isCompact ? "mt-2" : "mt-3"
+              isCompact ? "mt-3" : "mt-4"
             )}>
               <button
                 onClick={() => setIsModalOpen(true)}
                 className={cn(
                   "w-full sm:w-auto bg-orange-600 text-white rounded-full hover:bg-orange-700 transition-colors shadow-md",
-                  isCompact ? "text-xs px-3 py-1" : "text-sm px-4 py-1.5"
+                  isCompact ? "text-xs px-4 py-2" : "text-sm px-6 py-2.5"
                 )}
               >
                 Detaylı Karşılaştır

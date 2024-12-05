@@ -1,13 +1,16 @@
 import React from 'react';
-import { ThumbsUp, ThumbsDown, MessageCircle } from 'lucide-react';
+import { Star, Tag } from 'lucide-react';
 import { Review } from '../../types/review';
 import { sortReviewsByDate } from '../../lib/utils/reviewUtils';
+import { cn } from '../../lib/utils';
 
 interface ReviewsListProps {
   reviews: Review[];
 }
 
 export function ReviewsList({ reviews }: ReviewsListProps) {
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
   if (!Array.isArray(reviews) || reviews.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -25,14 +28,28 @@ export function ReviewsList({ reviews }: ReviewsListProps) {
           <div className="flex items-start justify-between mb-4">
             <div>
               <h3 className="font-semibold">{review.userName}</h3>
+              {review.aspects && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {review.aspects.map((aspect, i) => (
+                    <span 
+                      key={i}
+                      className="inline-flex items-center px-2 py-1 rounded-full bg-orange-50 text-orange-600 text-xs"
+                    >
+                      <Tag className="h-3 w-3 mr-1" />
+                      {aspect}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="flex items-center">
               {Array.from({ length: 5 }).map((_, index) => (
                 <span
                   key={index}
-                  className={`text-lg ${
-                    index < review.rating ? 'text-yellow-400' : 'text-gray-300'
-                  }`}
+                  className={cn(
+                    "text-lg",
+                    index < review.rating ? "text-yellow-400" : "text-gray-300"
+                  )}
                 >
                   ★
                 </span>
@@ -41,20 +58,6 @@ export function ReviewsList({ reviews }: ReviewsListProps) {
           </div>
           <p className="text-gray-700 mb-4">{review.comment}</p>
           <div className="flex items-center justify-between text-sm text-gray-500">
-            <div className="flex items-center space-x-4">
-              <button className="flex items-center space-x-1 hover:text-orange-600">
-                <ThumbsUp className="h-4 w-4" />
-                <span>{review.likes}</span>
-              </button>
-              <button className="flex items-center space-x-1 hover:text-red-600">
-                <ThumbsDown className="h-4 w-4" />
-                <span>{review.dislikes}</span>
-              </button>
-              <button className="flex items-center space-x-1 hover:text-gray-700">
-                <MessageCircle className="h-4 w-4" />
-                <span>Yanıtla</span>
-              </button>
-            </div>
             <span>{new Date(review.date).toLocaleDateString('tr-TR')}</span>
           </div>
         </div>

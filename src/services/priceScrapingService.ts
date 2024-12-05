@@ -1,10 +1,11 @@
-import { cache } from '../cache';
-import { CACHE_KEYS, CACHE_DURATIONS, generateCacheKey } from '../utils/cacheUtils';
+import { cache } from '../lib/cache';
+import { CACHE_KEYS, CACHE_DURATIONS, generateCacheKey } from '../lib/utils/cacheUtils';
 
 interface PriceData {
   price: string;
   store: string;
   url: string;
+  hasCredit?: boolean;
   hasTrade?: boolean;
 }
 
@@ -14,6 +15,7 @@ const STORES = {
     baseUrl: 'https://www.hepsiburada.com',
     searchPath: '/ara',
     searchParam: 'q',
+    hasCredit: true,
     hasTrade: false
   },
   trendyol: {
@@ -21,6 +23,7 @@ const STORES = {
     baseUrl: 'https://www.trendyol.com',
     searchPath: '/sr',
     searchParam: 'q',
+    hasCredit: true,
     hasTrade: true
   },
   n11: {
@@ -28,11 +31,12 @@ const STORES = {
     baseUrl: 'https://www.n11.com',
     searchPath: '/arama',
     searchParam: 'q',
+    hasCredit: true,
     hasTrade: false
   }
 };
 
-// Base price mapping for consistent pricing
+// Base price mapping for consistent pricing across all views
 const BASE_PRICES = {
   // Samsung
   's24 ultra': 84999,
@@ -90,6 +94,7 @@ async function scrapePrices(model: string): Promise<PriceData[]> {
     store: store.name,
     price: `${(basePrice + variation()).toLocaleString('tr-TR')} ₺`,
     url: buildSearchUrl(store, model),
+    hasCredit: store.hasCredit,
     hasTrade: store.hasTrade
   })).sort((a, b) => {
     const priceA = parseInt(a.price.replace(/[^0-9]/g, ''));
@@ -125,6 +130,7 @@ export function findBestPrice(prices: PriceData[]): PriceData | null {
   });
 }
 
+// Export base price for consistent pricing across components
 export function getPhoneBasePrice(model: string): string {
   const price = getBasePrice(model);
   return `${price.toLocaleString('tr-TR')} ₺`;

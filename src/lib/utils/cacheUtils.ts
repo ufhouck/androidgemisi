@@ -1,11 +1,3 @@
-export function generateCacheKey(prefix: string, identifier: string): string {
-  return `${prefix}_${identifier}`;
-}
-
-export function getCacheExpiry(hours: number): number {
-  return hours * 60 * 60;
-}
-
 export const CACHE_KEYS = {
   PHONE: 'phone',
   REVIEWS: 'reviews',
@@ -14,8 +6,12 @@ export const CACHE_KEYS = {
 } as const;
 
 export const CACHE_DURATIONS = {
-  SHORT: getCacheExpiry(1), // 1 hour
-  MEDIUM: getCacheExpiry(12), // 12 hours
-  LONG: getCacheExpiry(24), // 24 hours
-  WEEK: getCacheExpiry(168) // 1 week
+  SHORT: 3600, // 1 hour
+  MEDIUM: 43200, // 12 hours
+  LONG: 86400, // 24 hours
+  WEEK: 604800 // 1 week
 } as const;
+
+export function generateCacheKey(prefix: keyof typeof CACHE_KEYS, identifier: string): string {
+  return `${prefix}_${identifier}`;
+}

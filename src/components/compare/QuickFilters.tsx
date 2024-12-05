@@ -25,28 +25,49 @@ export function QuickFilters({
   const [activeModalFilter, setActiveModalFilter] = useState<string | null>(null);
   const filterRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [showLeftGradient, setShowLeftGradient] = useState(false);
+  const [showRightGradient, setShowRightGradient] = useState(true);
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
   const { mainFilters, additionalFilters } = getFilterConfig(isMobile);
 
   useEffect(() => {
+    const handleScroll = () => {
+      if (scrollContainerRef.current) {
+        const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+        setShowLeftGradient(scrollLeft > 0);
+        setShowRightGradient(scrollLeft < scrollWidth - clientWidth - 10);
+      }
+    };
+
+    const scrollContainer = scrollContainerRef.current;
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', handleScroll);
+      handleScroll();
+    }
+
+    return () => {
+      if (scrollContainer) {
+        scrollContainer.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       const target = event.target as Node;
-      const isDropdownClick = dropdownRef.current?.contains(target);
-      const isFilterClick = expandedFilter && filterRefs.current[expandedFilter]?.contains(target);
-
-      // Don't close if clicking inside dropdown or filter button
-      if (!isDropdownClick && !isFilterClick) {
+      if (!dropdownRef.current?.contains(target) && 
+          !Object.values(filterRefs.current).some(ref => ref?.contains(target))) {
         setExpandedFilter(null);
       }
     }
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [expandedFilter]);
+  }, []);
 
   const handleFilterClick = (filterId: string, event: React.MouseEvent) => {
-    // Prevent event from bubbling up
     event.stopPropagation();
 
     if (isMobile) {
@@ -59,7 +80,6 @@ export function QuickFilters({
   };
 
   const handleCheckboxChange = (filterId: string, value: string, event: React.MouseEvent) => {
-    // Prevent event from bubbling up
     event.stopPropagation();
     onFilterChange(filterId, value);
   };
@@ -118,11 +138,26 @@ export function QuickFilters({
     .some(([_, values]) => values.length > 0);
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-3">
-      <div className={cn(
-        "flex items-center gap-2",
-        isMobile ? "flex-nowrap overflow-x-auto no-scrollbar" : "flex-wrap"
-      )}>
+    <div className="bg-white rounded-xl border border-gray-200 p-3 relative">
+      {/* Scroll Gradients */}
+      {isMobile && (
+        <>
+          {showLeftGradient && (
+            <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-white to-transparent pointer-events-none z-10" />
+          )}
+          {showRightGradient && (
+            <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none z-10" />
+          )}
+        </>
+      )}
+
+      <div 
+        ref={scrollContainerRef}
+        className={cn(
+          "flex items-center gap-2",
+          isMobile ? "flex-nowrap overflow-x-auto no-scrollbar" : "flex-wrap"
+        )}
+      >
         {/* Sorting Filter */}
         <div className="flex-none">
           <select
@@ -130,7 +165,7 @@ export function QuickFilters({
             onChange={(e) => onSortingChange(e.target.value)}
             className={cn(
               "bg-white border border-gray-200 rounded-lg hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500",
-              isMobile ? "text-xs py-1 pl-2 pr-6" : "text-sm py-1.5 pl-2 pr-8"
+              isMobile ? "text-xs h-[30px] pl-2 pr-6" : "text-sm py-1.5 pl-2 pr-8"
             )}
           >
             <option value="price-asc">En Düşük Fiyat</option>

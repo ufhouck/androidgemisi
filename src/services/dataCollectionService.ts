@@ -1,8 +1,7 @@
 import PQueue from 'p-queue';
 import { storage } from '../lib/storage';
 import { PHONE_CATALOG } from '../data/phoneCatalog';
-import { scrapePhoneData } from './phoneScraping';
-import { scrapeAndAnalyzeReviews } from './reviewScraping';
+import { getAllReviews } from './reviewScraping';
 import { phones } from '../data/phones';
 
 // Create a queue with concurrency limit and rate limiting
@@ -31,23 +30,16 @@ async function processPhone(brand: string, model: string): Promise<void> {
       return;
     }
     
-    // Get phone data and reviews
-    const phoneData = await scrapePhoneData(fullModel);
-    const reviews = await scrapeAndAnalyzeReviews(phoneId, fullModel);
+    // Get reviews
+    const reviews = await getAllReviews(fullModel);
     
     // Update phone data in memory
     const existingPhoneIndex = phones.findIndex(p => p.id === phoneId);
     if (existingPhoneIndex !== -1) {
       phones[existingPhoneIndex] = {
         ...phones[existingPhoneIndex],
-        ...phoneData,
         reviews: reviews.length
       };
-    } else {
-      phones.push({
-        ...phoneData,
-        reviews: reviews.length
-      });
     }
     
     // Store last update time

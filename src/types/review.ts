@@ -7,4 +7,5 @@ export interface Review {
   likes: number;
   dislikes: number;
   date: string;
+  aspects?: string[];
 }

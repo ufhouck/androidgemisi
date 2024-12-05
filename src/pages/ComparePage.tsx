@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { phones } from '../data/phones';
 import { QuickFilters } from '../components/compare/QuickFilters';
 import { FilterChips } from '../components/compare/FilterChips';
@@ -7,6 +8,7 @@ import { ComparisonDrawer } from '../components/compare/ComparisonDrawer';
 import { cn } from '../lib/utils';
 
 export function ComparePage() {
+  const [searchParams] = useSearchParams();
   const [selectedPhones, setSelectedPhones] = useState<string[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [sorting, setSorting] = useState('price-asc');
@@ -18,6 +20,19 @@ export function ComparePage() {
     battery: [],
     storage: []
   });
+
+  // Initialize filters from URL parameters
+  useEffect(() => {
+    const newFilters = { ...quickFilters };
+    
+    for (const [key, value] of searchParams.entries()) {
+      if (key in newFilters) {
+        newFilters[key] = [value];
+      }
+    }
+    
+    setQuickFilters(newFilters);
+  }, [searchParams]);
 
   const filterLabels = {
     price: {

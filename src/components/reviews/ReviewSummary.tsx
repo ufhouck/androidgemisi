@@ -2,12 +2,15 @@ import React from 'react';
 import { Review } from '../../types/review';
 import { Star } from 'lucide-react';
 import { calculateAverageRating } from '../../lib/utils/reviewUtils';
+import { cn } from '../../lib/utils';
 
 interface ReviewSummaryProps {
   reviews: Review[];
 }
 
 export function ReviewSummary({ reviews }: ReviewSummaryProps) {
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
   if (!Array.isArray(reviews) || reviews.length === 0) {
     return null;
   }
@@ -23,7 +26,10 @@ export function ReviewSummary({ reviews }: ReviewSummaryProps) {
   return (
     <div className="bg-white p-6 rounded-lg shadow-md mb-6">
       <div className="flex items-center space-x-4 mb-6">
-        <div className="text-4xl font-bold text-orange-600">
+        <div className={cn(
+          "font-bold text-orange-600",
+          isMobile ? "text-3xl" : "text-4xl"
+        )}>
           {averageRating.toFixed(1)}
         </div>
         <div>
@@ -31,15 +37,19 @@ export function ReviewSummary({ reviews }: ReviewSummaryProps) {
             {Array.from({ length: 5 }).map((_, index) => (
               <Star
                 key={index}
-                className={`h-5 w-5 ${
+                className={cn(
+                  isMobile ? "h-4 w-4" : "h-5 w-5",
                   index < Math.round(averageRating)
-                    ? 'text-yellow-400 fill-current'
-                    : 'text-gray-300'
-                }`}
+                    ? "text-yellow-400 fill-current"
+                    : "text-gray-300"
+                )}
               />
             ))}
           </div>
-          <p className="text-sm text-gray-500">
+          <p className={cn(
+            "text-gray-500",
+            isMobile ? "text-xs" : "text-sm"
+          )}>
             {reviews.length} değerlendirme
           </p>
         </div>
@@ -54,7 +64,10 @@ export function ReviewSummary({ reviews }: ReviewSummaryProps) {
             <div key={rating} className="flex items-center space-x-2">
               <div className="flex items-center space-x-1 w-12">
                 <span>{rating}</span>
-                <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                <Star className={cn(
+                  "text-yellow-400 fill-current",
+                  isMobile ? "h-3 w-3" : "h-4 w-4"
+                )} />
               </div>
               <div className="flex-1 h-2 bg-gray-200 rounded-full">
                 <div

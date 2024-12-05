@@ -24,6 +24,20 @@ interface SearchResult {
 const MAX_RECENT_SEARCHES = 5;
 const RECENT_SEARCHES_KEY = 'recent_searches';
 
+const POPULAR_BRANDS = [
+  { id: 'samsung', name: 'Samsung' },
+  { id: 'xiaomi', name: 'Xiaomi' },
+  { id: 'google', name: 'Google' },
+  { id: 'oneplus', name: 'OnePlus' },
+  { id: 'honor', name: 'Honor' }
+];
+
+const POPULAR_FILTERS = [
+  { id: 'battery-5000', name: 'Uzun Pil Ömrü', filter: { key: 'battery', value: '5000+' } },
+  { id: 'price-budget', name: 'Uygun Fiyat', filter: { key: 'price', value: '0-20000' } },
+  { id: 'flagship', name: 'Amiral Gemisi', filter: { key: 'processor', value: 'snapdragon-8-gen-3' } }
+];
+
 function normalizeText(text: string): string {
   return text.toLowerCase()
     .replace(/ı/g, 'i')
@@ -57,7 +71,6 @@ function getReviewSummary(rating: number, count: number): string {
   return "İyileştirmeye açık";
 }
 
-// Verify if a phone exists in our database
 function phoneExists(name: string): boolean {
   const normalizedName = normalizeText(name);
   return phones.some(phone => normalizeText(phone.name) === normalizedName);
@@ -73,7 +86,6 @@ export function useSearch() {
     async function loadRecentSearches() {
       const saved = await storage.get<string[]>(RECENT_SEARCHES_KEY);
       if (saved && Array.isArray(saved)) {
-        // Filter out any searches that don't match existing phones
         const validSearches = saved.filter(search => phoneExists(search));
         setRecentSearches(validSearches);
       }
@@ -106,23 +118,16 @@ export function useSearch() {
           const normalizedName = normalizeText(phone.name);
           let score = 0;
           
-          // Full name exact match
           if (normalizedName === normalizedQuery) {
             score += 100;
-          }
-          // Full name starts with query
-          else if (normalizedName.startsWith(normalizedQuery)) {
+          } else if (normalizedName.startsWith(normalizedQuery)) {
             score += 75;
-          }
-          // Full name contains query
-          else if (normalizedName.includes(normalizedQuery)) {
+          } else if (normalizedName.includes(normalizedQuery)) {
             score += 50;
           }
 
-          // Search in specifications
           score += searchInSpecs(phone.specs, normalizedQuery);
 
-          // Search in individual words of the name
           const nameWords = normalizedName.split(' ');
           nameWords.forEach(word => {
             if (word === normalizedQuery) {
@@ -199,6 +204,8 @@ export function useSearch() {
     results,
     isLoading,
     recentSearches,
+    popularBrands: POPULAR_BRANDS,
+    popularFilters: POPULAR_FILTERS,
     clearRecentSearches: async () => {
       setRecentSearches([]);
       await storage.delete(RECENT_SEARCHES_KEY);

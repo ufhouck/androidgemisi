@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Search, Loader2, Star, MessageSquare, Clock, X } from 'lucide-react';
+import { Search, Loader2, Star, MessageSquare, Clock } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useSearch } from '../../hooks/useSearch';
 import { useNavigate } from 'react-router-dom';
@@ -13,23 +13,6 @@ interface SearchBarProps {
   variant?: 'default' | 'compact';
 }
 
-const getRandomTopPhones = () => {
-  const topPhones = [...phones]
-    .sort((a, b) => b.rating - a.rating)
-    .slice(0, 8);
-
-  return topPhones
-    .sort(() => Math.random() - 0.5)
-    .slice(0, 4)
-    .map(phone => ({
-      id: phone.id,
-      name: phone.name,
-      price: phone.price,
-      specs: phone.specs,
-      rating: phone.rating
-    }));
-};
-
 export function SearchBar({ 
   className, 
   placeholder = "Telefon modeli ara...", 
@@ -38,15 +21,13 @@ export function SearchBar({
   variant = 'default'
 }: SearchBarProps) {
   const [focused, setFocused] = useState(false);
-  const { query, setQuery, results, isLoading, recentSearches, clearRecentSearches } = useSearch();
+  const { query, setQuery, results, isLoading, recentSearches, clearRecentSearches, popularBrands } = useSearch();
   const [showResults, setShowResults] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   const isCompact = variant === 'compact' || isMobile;
-
-  const suggestedPhones = useMemo(() => getRandomTopPhones(), [showResults]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -66,6 +47,13 @@ export function SearchBar({
     setShowResults(false);
     setFocused(false);
     navigate(`/telefon/${slug}`);
+    onResultClick?.();
+  };
+
+  const handleBrandClick = (brandId: string) => {
+    navigate(`/karsilastir?brand=${brandId}`);
+    setShowResults(false);
+    setFocused(false);
     onResultClick?.();
   };
 
@@ -255,40 +243,19 @@ export function SearchBar({
                   "font-medium text-gray-400 mb-2",
                   isCompact ? "text-[10px]" : "text-xs"
                 )}>
-                  POPÜLER TELEFONLAR
+                  POPÜLER MARKALAR
                 </div>
-                <div className="space-y-0.5">
-                  {suggestedPhones.map((phone) => (
+                <div className="flex flex-wrap gap-2">
+                  {popularBrands.map(brand => (
                     <button
-                      key={phone.id}
+                      key={brand.id}
+                      onClick={() => handleBrandClick(brand.id)}
                       className={cn(
-                        "w-full text-left hover:bg-orange-50 rounded-lg transition-colors",
-                        isCompact ? "px-2 py-1.5" : "px-3 py-2"
+                        "px-3 py-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors",
+                        isCompact ? "text-xs" : "text-sm"
                       )}
-                      onClick={() => handleResultClick(phone.name)}
                     >
-                      <div className="flex justify-between items-center gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className={cn(
-                            "font-medium text-gray-900 truncate",
-                            isCompact ? "text-xs" : "text-sm"
-                          )}>{phone.name}</p>
-                          <p className={cn(
-                            "text-gray-500 truncate",
-                            isCompact ? "text-[10px]" : "text-xs"
-                          )}>{phone.specs.processor}</p>
-                        </div>
-                        <div className={cn(
-                          "flex items-center text-sm whitespace-nowrap",
-                          isCompact ? "text-xs" : "text-sm"
-                        )}>
-                          <Star className={cn(
-                            "text-yellow-400 fill-current mr-1",
-                            isCompact ? "h-3 w-3" : "h-4 w-4"
-                          )} />
-                          <span className="font-medium">{phone.rating.toFixed(1)}</span>
-                        </div>
-                      </div>
+                      {brand.name}
                     </button>
                   ))}
                 </div>

@@ -1,59 +1,28 @@
 import { Review } from '../types/review';
-import { generateMockReviews } from '../data/mockReviews';
-import { storage } from '../lib/storage';
 import { cache } from '../lib/cache';
+import { CACHE_KEYS, CACHE_DURATIONS, generateCacheKey } from '../lib/utils/cacheUtils';
+import { getPhoneReviews } from './reviewAnalysis';
 
-export async function scrapeAndAnalyzeReviews(phoneId: string, model: string): Promise<Review[]> {
+export async function getAllReviews(model: string): Promise<Review[]> {
+  const cacheKey = generateCacheKey(CACHE_KEYS.REVIEWS, model);
+  
   try {
-    // Check memory cache first
-    const cachedReviews = cache.get<Review[]>(`reviews_${phoneId}`);
-    if (cachedReviews) {
+    // Check cache first
+    const cachedReviews = await cache.get<Review[]>(cacheKey);
+    if (cachedReviews && Array.isArray(cachedReviews) && cachedReviews.length > 0) {
       return cachedReviews;
     }
 
-    // Check persistent storage
-    const storedReviews = await storage.get<Review[]>(`reviews_${phoneId}`);
-    if (storedReviews && Array.isArray(storedReviews) && storedReviews.length > 0) {
-      cache.set(`reviews_${phoneId}`, storedReviews, 3600); // Cache for 1 hour
-      return storedReviews;
+    // Get fresh reviews
+    const reviews = await getPhoneReviews(model);
+    
+    if (reviews.length > 0) {
+      await cache.set(cacheKey, reviews, CACHE_DURATIONS.SHORT);
     }
-
-    // Generate mock reviews
-    const reviews = generateMockReviews(phoneId, model);
-
-    // Store in both caches
-    cache.set(`reviews_${phoneId}`, reviews, 3600);
-    await storage.set(`reviews_${phoneId}`, reviews, 12 * 60 * 60);
 
     return reviews;
-  } catch (error) {
-    console.error('Error generating reviews:', error);
-    return [];
-  }
-}
-
-export async function getReviews(phoneId: string): Promise<Review[]> {
-  try {
-    // Check memory cache first
-    const cachedReviews = cache.get<Review[]>(`reviews_${phoneId}`);
-    if (cachedReviews) {
-      return cachedReviews;
-    }
-
-    // Check persistent storage
-    const storedReviews = await storage.get<Review[]>(`reviews_${phoneId}`);
-    if (storedReviews && Array.isArray(storedReviews)) {
-      cache.set(`reviews_${phoneId}`, storedReviews, 3600);
-      return storedReviews;
-    }
-
-    return [];
   } catch (error) {
     console.error('Error getting reviews:', error);
     return [];
   }
-}
-
-export function clearReviewCache(): void {
-  cache.clear();
 }
