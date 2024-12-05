@@ -1,108 +1,140 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Smartphone, Menu, X } from 'lucide-react';
-import { SearchBar } from '../ui/SearchBar';
+import { Smartphone, Menu, X, Search } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { SearchDialog } from '../ui/SearchDialog';
 
 export function Header() {
   const location = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const isActive = (path: string) => location.pathname === path;
 
+  const menuItems = [
+    { path: '/', label: 'Ana Sayfa' },
+    { path: '/karsilastir', label: 'Karşılaştır' },
+    { path: '/yorumlar', label: 'Kullanıcı Yorumları' }
+  ];
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
-      <div className="container mx-auto px-4">
-        <div className="h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center space-x-2">
-            <Smartphone className="h-6 w-6 text-orange-600" />
-            <span className="text-xl font-bold">AndroidGemisi</span>
-          </Link>
-          
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 hover:bg-gray-100 rounded-lg"
-          >
-            {isMenuOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <Menu className="h-6 w-6" />
-            )}
-          </button>
-
-          <nav className="hidden md:flex items-center space-x-8">
+    <header className={cn(
+      "sticky top-0 z-40 w-full transition-all duration-200",
+      isScrolled ? "bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b shadow-sm" : "bg-white"
+    )}>
+      <div className="container mx-auto">
+        <div className="flex h-14 items-center justify-between">
+          <div className="flex items-center gap-6">
             <Link 
               to="/" 
+              className="flex items-center space-x-2 shrink-0"
+            >
+              <div className="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center">
+                <Smartphone className="h-5 w-5 text-white" />
+              </div>
+              <span className="text-lg font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
+                AndroidGemisi
+              </span>
+            </Link>
+
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center space-x-1">
+              {menuItems.map(item => (
+                <Link 
+                  key={item.path}
+                  to={item.path} 
+                  className={cn(
+                    "px-3 py-1.5 text-sm font-medium rounded-lg transition-colors relative group",
+                    isActive(item.path) 
+                      ? "text-orange-600 bg-orange-50"
+                      : "text-gray-600 hover:text-orange-600 hover:bg-gray-50"
+                  )}
+                >
+                  {item.label}
+                  {isActive(item.path) && (
+                    <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-orange-600" />
+                  )}
+                </Link>
+              ))}
+            </nav>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsSearchOpen(true)}
               className={cn(
-                "text-sm font-medium transition-colors hover:text-orange-600",
-                isActive('/') && "text-orange-600"
+                "hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm text-gray-500 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors",
+                "border border-gray-200/50"
               )}
             >
-              Ana Sayfa
-            </Link>
-            <Link 
-              to="/karsilastir" 
-              className={cn(
-                "text-sm font-medium transition-colors hover:text-orange-600",
-                isActive('/karsilastir') && "text-orange-600"
-              )}
+              <Search className="h-4 w-4" />
+              <span className="hidden lg:inline">Telefon ara...</span>
+              <kbd className="hidden lg:inline-flex h-5 select-none items-center gap-1 rounded border bg-white px-1.5 font-mono text-[10px] font-medium opacity-100">
+                <span className="text-xs">⌘</span>K
+              </kbd>
+            </button>
+            
+            <button
+              onClick={() => setIsSearchOpen(true)}
+              className="sm:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              Karşılaştır
-            </Link>
-            <Link 
-              to="/yorumlar" 
-              className={cn(
-                "text-sm font-medium transition-colors hover:text-orange-600",
-                isActive('/yorumlar') && "text-orange-600"
-              )}
+              <Search className="h-5 w-5" />
+            </button>
+            
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              Kullanıcı Yorumları
-            </Link>
-          </nav>
+              {isMenuOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
+            </button>
+          </div>
         </div>
 
-        {/* Mobile Menu */}
-        <div className={cn(
-          "md:hidden",
-          isMenuOpen ? "block" : "hidden"
-        )}>
-          <nav className="py-4 space-y-2 border-t">
-            <Link 
-              to="/" 
-              onClick={() => setIsMenuOpen(false)}
-              className={cn(
-                "block px-4 py-2 rounded-lg transition-colors hover:bg-orange-50",
-                isActive('/') && "bg-orange-50 text-orange-600"
-              )}
-            >
-              Ana Sayfa
-            </Link>
-            <Link 
-              to="/karsilastir"
-              onClick={() => setIsMenuOpen(false)}
-              className={cn(
-                "block px-4 py-2 rounded-lg transition-colors hover:bg-orange-50",
-                isActive('/karsilastir') && "bg-orange-50 text-orange-600"
-              )}
-            >
-              Karşılaştır
-            </Link>
-            <Link 
-              to="/yorumlar"
-              onClick={() => setIsMenuOpen(false)}
-              className={cn(
-                "block px-4 py-2 rounded-lg transition-colors hover:bg-orange-50",
-                isActive('/yorumlar') && "bg-orange-50 text-orange-600"
-              )}
-            >
-              Kullanıcı Yorumları
-            </Link>
+        {/* Mobile Navigation */}
+        {isMenuOpen && (
+          <nav className="md:hidden py-2 border-t">
+            <div className="space-y-1 p-1">
+              {menuItems.map(item => (
+                <Link 
+                  key={item.path}
+                  to={item.path} 
+                  onClick={() => setIsMenuOpen(false)}
+                  className={cn(
+                    "flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors",
+                    isActive(item.path)
+                      ? "bg-orange-50 text-orange-600"
+                      : "hover:bg-gray-50"
+                  )}
+                >
+                  <span>{item.label}</span>
+                  {isActive(item.path) && (
+                    <span className="ml-auto flex h-2 w-2 rounded-full bg-orange-600" />
+                  )}
+                </Link>
+              ))}
+            </div>
           </nav>
-        </div>
-
-        <div className="py-4">
-          <SearchBar />
-        </div>
+        )}
       </div>
+
+      <SearchDialog 
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+      />
     </header>
   );
 }

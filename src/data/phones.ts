@@ -22,6 +22,7 @@ export const phones: Phone[] = [
     colors: ['Titanium Black', 'Titanium Gray', 'Titanium Violet', 'Titanium Yellow'],
     releaseDate: '2024-01-17'
   },
+  // Add more Samsung phones...
   {
     id: 's24plus',
     name: 'Samsung Galaxy S24+',
@@ -42,6 +43,8 @@ export const phones: Phone[] = [
     colors: ['Onyx Black', 'Marble Gray', 'Cobalt Violet', 'Amber Yellow'],
     releaseDate: '2024-01-17'
   },
+  // Add more Samsung phones...
+
   // Google Pixel Series
   {
     id: 'pixel8pro',
@@ -63,6 +66,8 @@ export const phones: Phone[] = [
     colors: ['Obsidian', 'Porcelain', 'Bay Blue'],
     releaseDate: '2023-10-12'
   },
+  // Add more Google phones...
+
   // OnePlus Series
   {
     id: 'oneplus12',
@@ -84,6 +89,8 @@ export const phones: Phone[] = [
     colors: ['Flowy Emerald', 'Silky Black'],
     releaseDate: '2024-01-23'
   },
+  // Add more OnePlus phones...
+
   // Xiaomi Series
   {
     id: '14pro',
@@ -104,147 +111,41 @@ export const phones: Phone[] = [
     },
     colors: ['Black', 'White', 'Jade Green'],
     releaseDate: '2024-02-25'
-  },
-  {
-    id: 'redminote13pro',
-    name: 'Redmi Note 13 Pro+',
-    price: {
-      tr: '24.999 ₺',
-      eu: '449 €',
-      us: '$399'
-    },
-    rating: 4.4,
-    specs: {
-      processor: 'Dimensity 7200 Ultra',
-      ram: '12GB',
-      storage: '256GB',
-      camera: '200MP + 8MP + 2MP',
-      battery: '5000mAh',
-      screen: '6.67" AMOLED 120Hz'
-    },
-    colors: ['Midnight Black', 'Moonlight White', 'Aurora Purple'],
-    releaseDate: '2024-01-15'
-  },
-  // POCO Series
-  {
-    id: 'pocox6pro',
-    name: 'POCO X6 Pro',
-    price: {
-      tr: '19.999 ₺',
-      eu: '399 €',
-      us: '$349'
-    },
-    rating: 4.3,
-    specs: {
-      processor: 'Dimensity 8300-Ultra',
-      ram: '12GB',
-      storage: '256GB',
-      camera: '64MP + 8MP + 2MP',
-      battery: '5000mAh',
-      screen: '6.67" AMOLED 120Hz'
-    },
-    colors: ['Black', 'Yellow', 'Gray'],
-    releaseDate: '2024-01-11'
-  },
-  // Honor Series
-  {
-    id: 'magic6pro',
-    name: 'Honor Magic6 Pro',
-    price: {
-      tr: '41.999 ₺',
-      eu: '849 €',
-      us: '$749'
-    },
-    rating: 4.4,
-    specs: {
-      processor: 'Snapdragon 8 Gen 3',
-      ram: '12GB',
-      storage: '512GB',
-      camera: '50MP + 50MP + 180MP',
-      battery: '5600mAh',
-      screen: '6.8" LTPO OLED'
-    },
-    colors: ['Black', 'Green', 'Purple'],
-    releaseDate: '2024-01-11'
-  },
-  {
-    id: 'honor90',
-    name: 'Honor 90',
-    price: {
-      tr: '29.999 ₺',
-      eu: '549 €',
-      us: '$499'
-    },
-    rating: 4.3,
-    specs: {
-      processor: 'Snapdragon 7 Gen 1',
-      ram: '8GB',
-      storage: '256GB',
-      camera: '200MP + 12MP + 2MP',
-      battery: '5000mAh',
-      screen: '6.7" AMOLED 120Hz'
-    },
-    colors: ['Emerald Green', 'Diamond Silver', 'Midnight Black'],
-    releaseDate: '2023-07-06'
-  },
-  // New phones
-  {
-    id: 'tecnospark20',
-    name: 'Tecno Spark 20',
-    price: {
-      tr: '7.999 ₺',
-      eu: '149 €',
-      us: '$129'
-    },
-    rating: 4.1,
-    specs: {
-      processor: 'Helio G85',
-      ram: '8GB',
-      storage: '128GB',
-      camera: '50MP + 0.8MP',
-      battery: '5000mAh',
-      screen: '6.6" IPS LCD'
-    },
-    colors: ['Racing Black', 'Cyber White', 'Gravity Green'],
-    releaseDate: '2024-01-05'
-  },
-  {
-    id: 'reeders23promax',
-    name: 'Reeder S23 Pro Max',
-    price: {
-      tr: '9.999 ₺',
-      eu: '189 €',
-      us: '$169'
-    },
-    rating: 4.0,
-    specs: {
-      processor: 'Helio G99',
-      ram: '6GB',
-      storage: '128GB',
-      camera: '108MP + 8MP + 2MP',
-      battery: '5000mAh',
-      screen: '6.8" IPS LCD'
-    },
-    colors: ['Gray', 'Blue'],
-    releaseDate: '2024-02-15'
   }
+  // Continue with more phones...
 ];
 
-// Helper functions
-export function getPhonesByBrand(brand: string) {
-  return phones.filter(phone => phone.name.toLowerCase().includes(brand.toLowerCase()));
+export function getPhonesByBrand(brand: string): Phone[] {
+  return phones.filter(phone => 
+    phone.name.toLowerCase().includes(brand.toLowerCase())
+  );
 }
 
-export function getPhonesByPriceRange(minPrice: number, maxPrice: number) {
+export function getPhonesByPriceRange(min: number, max: number): Phone[] {
   return phones.filter(phone => {
     const price = parseInt(phone.price.tr.replace(/[^0-9]/g, ''));
-    return price >= minPrice && price <= maxPrice;
+    return price >= min && price <= max;
   });
 }
 
-export function getPhonesByYear(year: number) {
-  return phones.filter(phone => {
-    const releaseYear = new Date(phone.releaseDate).getFullYear();
-    return releaseYear === year;
-  });
+export function getPhoneById(id: string): Phone | undefined {
+  return phones.find(phone => phone.id === id);
+}
+
+export function addPhone(phone: Phone): void {
+  phones.push(phone);
+}
+
+export function updatePhone(id: string, updatedPhone: Phone): void {
+  const index = phones.findIndex(p => p.id === id);
+  if (index !== -1) {
+    phones[index] = updatedPhone;
+  }
+}
+
+export function deletePhone(id: string): void {
+  const index = phones.findIndex(p => p.id === id);
+  if (index !== -1) {
+    phones.splice(index, 1);
+  }
 }

@@ -11,10 +11,10 @@ export function ReviewsPage() {
   }));
 
   return (
-    <main className="container mx-auto px-4 py-8">
-      <div className="max-w-3xl mx-auto text-center mb-12">
-        <h1 className="text-3xl font-bold mb-4">Yapay Zeka Destekli Kullanıcı Yorumları</h1>
-        <div className="flex items-center justify-center mb-4">
+    <main className="container mx-auto px-4 py-4">
+      <div className="max-w-3xl mx-auto text-center mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-3">Yapay Zeka Destekli Kullanıcı Yorumları</h1>
+        <div className="flex items-center justify-center mb-3">
           <MessageSquareText className="h-6 w-6 text-orange-600 mr-2" />
           <p className="text-lg text-gray-600">
             Farklı platformlardan toplanan kullanıcı deneyimlerini yapay zeka ile analiz ediyoruz
@@ -26,7 +26,7 @@ export function ReviewsPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {allPhoneReviews.map(({ phone, reviews }) => (
           <ReviewSummaryCard
             key={phone.id}

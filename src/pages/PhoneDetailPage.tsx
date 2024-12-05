@@ -22,7 +22,7 @@ export function PhoneDetailPage() {
 
   if (!phone) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-4">
         <h1 className="text-2xl font-bold">Telefon bulunamadı</h1>
       </div>
     );
@@ -31,12 +31,12 @@ export function PhoneDetailPage() {
   const reviews = getReviewsByPhoneId(phone.id);
 
   return (
-    <main className="container mx-auto px-4 py-8">
+    <main className="container mx-auto px-4 py-4">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6">{phone.name}</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold mb-4">{phone.name}</h1>
         
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex items-center justify-between mb-6">
+        <div className="bg-white rounded-lg shadow-md p-4">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-4">
               <div className="flex items-center">
                 <Star className="h-5 w-5 text-yellow-400 fill-current" />
@@ -56,7 +56,7 @@ export function PhoneDetailPage() {
             <div className="border rounded-lg">
               <button
                 onClick={() => setIsSpecsOpen(!isSpecsOpen)}
-                className="w-full flex items-center justify-between p-4 font-medium text-left"
+                className="w-full flex items-center justify-between p-3 font-medium text-left"
               >
                 <span>Teknik Özellikler</span>
                 {isSpecsOpen ? (
@@ -66,8 +66,8 @@ export function PhoneDetailPage() {
                 )}
               </button>
               
-              <div className={cn("border-t p-4", !isSpecsOpen && "hidden")}>
-                <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className={cn("border-t p-3", !isSpecsOpen && "hidden")}>
+                <dl className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div>
                     <dt className="text-sm font-medium text-gray-500">İşlemci</dt>
                     <dd className="mt-1">{phone.specs.processor}</dd>
@@ -97,8 +97,8 @@ export function PhoneDetailPage() {
             </div>
 
             {/* Reviews Section */}
-            <div className="mt-8">
-              <h2 className="text-xl font-semibold mb-4">Kullanıcı Yorumları</h2>
+            <div className="mt-6">
+              <h2 className="text-xl font-semibold mb-3">Kullanıcı Yorumları</h2>
               <ReviewSummary reviews={reviews} />
               <ReviewsList reviews={reviews} />
             </div>

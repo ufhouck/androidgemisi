@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { phones } from '../data/phones';
+import { getReviewsByPhoneId, getAverageRating } from '../data/reviews';
 
 interface SearchResult {
   id: string;
@@ -11,24 +12,19 @@ interface SearchResult {
     processor: string;
     ram: string;
   };
-  releaseDate: string;
-}
-
-interface SearchHistory {
-  query: string;
-  timestamp: number;
+  reviews: {
+    rating: number;
+    count: number;
+    summary: string;
+  };
 }
 
 const POPULAR_SEARCHES = [
-  'Samsung Galaxy S24',
-  'iPhone 15',
-  'Google Pixel 8',
+  'Samsung Galaxy S24 Ultra',
+  'Google Pixel 8 Pro',
   'OnePlus 12',
-  'Xiaomi 14'
+  'Xiaomi 14 Pro'
 ];
-
-const HISTORY_KEY = 'search_history';
-const MAX_HISTORY_ITEMS = 5;
 
 function normalizeText(text: string): string {
   return text.toLowerCase()
@@ -41,33 +37,23 @@ function normalizeText(text: string): string {
     .trim();
 }
 
-function getSearchHistory(): SearchHistory[] {
-  const history = localStorage.getItem(HISTORY_KEY);
-  return history ? JSON.parse(history) : [];
-}
-
-function addToSearchHistory(query: string) {
-  if (!query.trim()) return;
-
-  const history = getSearchHistory();
-  const newHistory = [
-    { query, timestamp: Date.now() },
-    ...history.filter(item => item.query !== query)
-  ].slice(0, MAX_HISTORY_ITEMS);
-
-  localStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
+function getReviewSummary(reviews: any[]) {
+  if (reviews.length === 0) return "Henüz yorum yapılmamış";
+  
+  const positiveCount = reviews.filter(r => r.rating >= 4).length;
+  const percentage = Math.round((positiveCount / reviews.length) * 100);
+  
+  if (percentage >= 80) return "Kullanıcılar çok memnun";
+  if (percentage >= 60) return "Kullanıcılar memnun";
+  if (percentage >= 40) return "Karma yorumlar";
+  return "İyileştirmeye açık";
 }
 
 export function useSearch() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [searchHistory, setSearchHistory] = useState<SearchHistory[]>([]);
   const [showPopular, setShowPopular] = useState(false);
-
-  useEffect(() => {
-    setSearchHistory(getSearchHistory());
-  }, []);
 
   const searchPhones = useCallback((searchQuery: string) => {
     const normalizedQuery = normalizeText(searchQuery);
@@ -86,25 +72,38 @@ export function useSearch() {
         
         let score = 0;
         
+        // Exact match
         if (normalizedName === normalizedQuery) {
           score += 100;
         }
+        // Starts with query
         else if (normalizedName.startsWith(normalizedQuery)) {
           score += 75;
         }
+        // Contains query
         else if (normalizedName.includes(normalizedQuery)) {
           score += 50;
         }
+        // Processor match
         if (normalizedProcessor.includes(normalizedQuery)) {
           score += 25;
         }
+        // RAM match
         if (normalizeText(phone.specs.ram).includes(normalizedQuery)) {
           score += 25;
         }
 
+        const reviews = getReviewsByPhoneId(phone.id);
+        const rating = getAverageRating(phone.id);
+
         return {
           phone,
-          score
+          score,
+          reviews: {
+            rating,
+            count: reviews.length,
+            summary: getReviewSummary(reviews)
+          }
         };
       })
       .filter(item => item.score > 0)
@@ -119,7 +118,7 @@ export function useSearch() {
           processor: item.phone.specs.processor,
           ram: item.phone.specs.ram
         },
-        releaseDate: item.phone.releaseDate
+        reviews: item.reviews
       }));
   }, []);
 
@@ -145,17 +144,11 @@ export function useSearch() {
     };
   }, [query, searchPhones]);
 
-  const handleSearch = (searchQuery: string) => {
-    setQuery(searchQuery);
-    addToSearchHistory(searchQuery);
-  };
-
   return {
     query,
-    setQuery: handleSearch,
+    setQuery,
     results,
     isLoading,
-    searchHistory,
     popularSearches: POPULAR_SEARCHES,
     showPopular
   };

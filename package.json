@@ -8,8 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "update-prices": "node scripts/updatePrices.js",
-    "analyze-reviews": "node scripts/analyzeReviews.js"
+    "collect-data": "node scripts/collectData.js"
   },
   "dependencies": {
     "lucide-react": "^0.344.0",
@@ -18,13 +17,16 @@
     "react-router-dom": "^6.22.3",
     "clsx": "^2.1.0",
     "tailwind-merge": "^2.1.0",
-    "cheerio": "^1.0.0-rc.12",
-    "node-cron": "^3.0.3",
     "axios": "^1.6.7",
-    "natural": "^6.10.4",
-    "node-cache": "^5.1.2",
+    "cheerio": "^1.0.0-rc.12",
     "chart.js": "^4.4.2",
-    "react-chartjs-2": "^5.2.0"
+    "react-chartjs-2": "^5.2.0",
+    "p-queue": "^7.4.1",
+    "idb-keyval": "^6.2.1",
+    "compromise": "^14.12.0",
+    "retry": "^0.13.1",
+    "sentiment": "^5.0.2",
+    "web-worker": "^1.3.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",

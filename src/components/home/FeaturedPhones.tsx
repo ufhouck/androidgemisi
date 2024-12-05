@@ -22,9 +22,9 @@ export function FeaturedPhones() {
   const selectedPhonesData = phones.filter(phone => selectedPhones.includes(phone.id));
 
   return (
-    <section className="py-12 bg-gray-50">
+    <section className="py-8 bg-gray-50">
       <div className="container mx-auto px-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3">
           <h2 className="text-2xl sm:text-3xl font-bold">Öne Çıkan Telefonlar</h2>
           <Link
             to="/karsilastir"
@@ -33,7 +33,7 @@ export function FeaturedPhones() {
             Tüm Telefonları Gör
           </Link>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {phones.slice(0, 6).map((phone) => (
             <PhoneCard
               key={phone.id}

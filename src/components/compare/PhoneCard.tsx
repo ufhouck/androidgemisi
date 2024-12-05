@@ -3,7 +3,6 @@ import { Star } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Phone } from '../../types/phone';
 import { cn } from '../../lib/utils';
-import { colors } from '../../lib/colors';
 
 interface PhoneCardProps {
   phone: Phone;
@@ -28,8 +27,8 @@ export function PhoneCard({ phone, isSelected, onSelect, disabled }: PhoneCardPr
         disabled && "opacity-50"
       )}
     >
-      <div className="p-6 flex-1">
-        <div className="flex items-center justify-between mb-4">
+      <div className="p-4 flex-1">
+        <div className="flex items-center justify-between mb-3">
           <div>
             <Link 
               to={`/telefon/${slugify(phone.name)}`}
@@ -44,7 +43,7 @@ export function PhoneCard({ phone, isSelected, onSelect, disabled }: PhoneCardPr
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="space-y-1">
             <p className="text-sm font-medium text-gray-500">İşlemci</p>
             <p className="text-sm">{phone.specs.processor}</p>
@@ -63,7 +62,7 @@ export function PhoneCard({ phone, isSelected, onSelect, disabled }: PhoneCardPr
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-1">
           {phone.colors.map((color) => (
             <span key={color} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
               {color}
@@ -72,14 +71,14 @@ export function PhoneCard({ phone, isSelected, onSelect, disabled }: PhoneCardPr
         </div>
       </div>
 
-      <div className="p-6 bg-gray-50 mt-auto">
+      <div className="p-4 bg-gray-50 mt-auto">
         <div className="flex items-center justify-between">
           <span className="text-xl font-bold text-orange-600">{phone.price.tr}</span>
           <button 
             onClick={() => onSelect(phone.id)}
             disabled={disabled && !isSelected}
             className={cn(
-              "px-6 py-2 rounded-full transition-colors text-sm font-medium",
+              "px-4 py-2 rounded-full transition-colors text-sm font-medium",
               isSelected 
                 ? "bg-red-100 text-red-600 hover:bg-red-200"
                 : "bg-orange-100 text-orange-600 hover:bg-orange-200",
