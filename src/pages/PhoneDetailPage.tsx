@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { phones } from '../data/phones';
 import { 
@@ -10,42 +10,67 @@ import {
   HardDrive, 
   Gauge, 
   Camera as CameraIcon,
-  Monitor
+  Monitor 
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { ReviewsList } from '../components/reviews/ReviewsList';
 import { ReviewSummary } from '../components/reviews/ReviewSummary';
 import { PriceComparison } from '../components/price/PriceComparison';
-import { getPhoneReviews } from '../services/reviewAnalysis';
+import { getReviewsByPhoneId } from '../data/reviews';
 import { Review } from '../types/review';
+import { slugifyPhoneName } from '../lib/utils/phoneUtils';
 
 export function PhoneDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const [isSpecsOpen, setIsSpecsOpen] = useState(true);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeSection, setActiveSection] = useState('specs');
+  const [showTOC, setShowTOC] = useState(false);
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-  const slugify = (text: string) => {
-    return text
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)+/g, '');
-  };
+  const specsRef = useRef<HTMLDivElement>(null);
+  const pricesRef = useRef<HTMLDivElement>(null);
+  const reviewsRef = useRef<HTMLDivElement>(null);
 
-  const phone = phones.find(p => slugify(p.name) === slug);
+  const phone = phones.find(p => slugifyPhoneName(p.name) === slug);
 
   useEffect(() => {
     async function loadReviews() {
       if (phone) {
-        const phoneReviews = await getPhoneReviews(phone.name);
+        const phoneReviews = await getReviewsByPhoneId(phone.id);
         setReviews(phoneReviews);
-        setIsLoading(false);
       }
+      setIsLoading(false);
     }
 
     loadReviews();
   }, [phone]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowTOC(window.scrollY > 100);
+
+      const refs = {
+        specs: specsRef.current?.offsetTop || 0,
+        prices: pricesRef.current?.offsetTop || 0,
+        reviews: reviewsRef.current?.offsetTop || 0
+      };
+
+      const scrollPosition = window.scrollY + 100;
+      const positions = Object.entries(refs);
+
+      for (let i = positions.length - 1; i >= 0; i--) {
+        if (scrollPosition >= positions[i][1]) {
+          setActiveSection(positions[i][0]);
+          break;
+        }
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   if (!phone) {
     return (
@@ -63,6 +88,10 @@ export function PhoneDetailPage() {
     { icon: Gauge, label: 'Batarya', value: phone.specs.battery },
     { icon: Monitor, label: 'Ekran', value: phone.specs.screen }
   ];
+
+  const scrollToSection = (ref: React.RefObject<HTMLDivElement>) => {
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   return (
     <main className="container mx-auto px-4 py-4">
@@ -91,15 +120,8 @@ export function PhoneDetailPage() {
 
         {/* Main Content Grid */}
         <div className="grid gap-4">
-          {/* Price Section - Mobile Only */}
-          {isMobile && (
-            <div className="bg-white rounded-lg shadow-md">
-              <PriceComparison model={phone.name} />
-            </div>
-          )}
-
           {/* Specs Section */}
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div ref={specsRef} className="bg-white rounded-lg shadow-md overflow-hidden">
             <button
               onClick={() => setIsSpecsOpen(!isSpecsOpen)}
               className="w-full flex items-center justify-between p-3 font-medium text-left hover:bg-gray-50 transition-colors"
@@ -133,15 +155,13 @@ export function PhoneDetailPage() {
             )}
           </div>
 
-          {/* Price Section - Desktop Only */}
-          {!isMobile && (
-            <div className="bg-white rounded-lg shadow-md">
-              <PriceComparison model={phone.name} />
-            </div>
-          )}
+          {/* Price Section */}
+          <div ref={pricesRef}>
+            <PriceComparison model={phone.name} />
+          </div>
 
           {/* Reviews Section */}
-          <div className="space-y-4">
+          <div ref={reviewsRef} className="space-y-4">
             <h2 className={cn(
               "font-semibold",
               isMobile ? "text-lg" : "text-xl"
@@ -159,6 +179,49 @@ export function PhoneDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Sticky TOC */}
+      {showTOC && (
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg z-40">
+          <div className="container mx-auto px-4 py-2">
+            <nav className="flex items-center justify-between gap-2">
+              <button
+                onClick={() => scrollToSection(specsRef)}
+                className={cn(
+                  "flex-1 px-3 py-1.5 text-sm rounded-lg transition-colors text-center",
+                  activeSection === 'specs'
+                    ? "bg-orange-50 text-orange-600"
+                    : "text-gray-600 hover:bg-gray-50"
+                )}
+              >
+                Özellikler
+              </button>
+              <button
+                onClick={() => scrollToSection(pricesRef)}
+                className={cn(
+                  "flex-1 px-3 py-1.5 text-sm rounded-lg transition-colors text-center",
+                  activeSection === 'prices'
+                    ? "bg-orange-50 text-orange-600"
+                    : "text-gray-600 hover:bg-gray-50"
+                )}
+              >
+                Fiyatlar
+              </button>
+              <button
+                onClick={() => scrollToSection(reviewsRef)}
+                className={cn(
+                  "flex-1 px-3 py-1.5 text-sm rounded-lg transition-colors text-center",
+                  activeSection === 'reviews'
+                    ? "bg-orange-50 text-orange-600"
+                    : "text-gray-600 hover:bg-gray-50"
+                )}
+              >
+                Yorumlar
+              </button>
+            </nav>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
