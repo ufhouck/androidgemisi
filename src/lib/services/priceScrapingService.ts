@@ -34,6 +34,7 @@ function buildSearchUrl(store: typeof STORES[keyof typeof STORES], query: string
 }
 
 async function scrapePrices(model: string): Promise<PriceData[]> {
+  // Price mapping for known models
   const basePriceMap: { [key: string]: number } = {
     's24 ultra': 84999,
     's24+': 64999,
@@ -52,6 +53,7 @@ async function scrapePrices(model: string): Promise<PriceData[]> {
   let basePrice = 39999;
   let longestMatch = '';
 
+  // Find the best matching base price
   Object.entries(basePriceMap).forEach(([key, price]) => {
     if (model.toLowerCase().includes(key) && key.length > longestMatch.length) {
       basePrice = price;
@@ -59,8 +61,10 @@ async function scrapePrices(model: string): Promise<PriceData[]> {
     }
   });
 
+  // Add some random variation to prices
   const variation = () => Math.floor(Math.random() * (basePrice * 0.1)) - (basePrice * 0.05);
 
+  // Generate prices for each store
   return [
     {
       store: 'Hepsiburada',
@@ -87,13 +91,16 @@ async function scrapePrices(model: string): Promise<PriceData[]> {
 export async function getPhonePrices(model: string): Promise<PriceData[]> {
   const cacheKey = generateCacheKey(CACHE_KEYS.PRICES, model);
   
+  // Check cache first
   const cachedPrices = await cache.get<PriceData[]>(cacheKey);
   if (cachedPrices) {
     return cachedPrices;
   }
 
+  // Get fresh prices
   const prices = await scrapePrices(model);
   
+  // Cache the results
   if (prices.length > 0) {
     await cache.set(cacheKey, prices, CACHE_DURATIONS.SHORT);
   }

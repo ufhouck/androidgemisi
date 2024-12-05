@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { phones } from '../data/phones';
-import { getReviewsByPhoneId, getAverageRating } from '../data/reviews';
+import { storage } from '../lib/storage';
 import { cache } from '../lib/cache';
 import { CACHE_KEYS, generateCacheKey } from '../lib/utils/cacheUtils';
 
@@ -21,12 +21,8 @@ interface SearchResult {
   };
 }
 
-const POPULAR_SEARCHES = [
-  'Samsung Galaxy S24 Ultra',
-  'Google Pixel 8 Pro',
-  'OnePlus 12',
-  'Xiaomi 14 Pro'
-];
+const MAX_RECENT_SEARCHES = 5;
+const RECENT_SEARCHES_KEY = 'recent_searches';
 
 function normalizeText(text: string): string {
   return text.toLowerCase()
@@ -37,6 +33,20 @@ function normalizeText(text: string): string {
     .replace(/ö/g, 'o')
     .replace(/ç/g, 'c')
     .trim();
+}
+
+function searchInSpecs(specs: any, query: string): number {
+  let score = 0;
+  const normalizedQuery = normalizeText(query);
+
+  Object.values(specs).forEach((value) => {
+    const normalizedValue = normalizeText(String(value));
+    if (normalizedValue.includes(normalizedQuery)) {
+      score += 25;
+    }
+  });
+
+  return score;
 }
 
 function getReviewSummary(rating: number, count: number): string {
@@ -51,6 +61,27 @@ export function useSearch() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+
+  useEffect(() => {
+    async function loadRecentSearches() {
+      const saved = await storage.get<string[]>(RECENT_SEARCHES_KEY);
+      if (saved && Array.isArray(saved)) {
+        setRecentSearches(saved);
+      }
+    }
+    loadRecentSearches();
+  }, []);
+
+  const addToRecentSearches = async (searchTerm: string) => {
+    const newSearches = [
+      searchTerm,
+      ...recentSearches.filter(s => s !== searchTerm)
+    ].slice(0, MAX_RECENT_SEARCHES);
+    
+    setRecentSearches(newSearches);
+    await storage.set(RECENT_SEARCHES_KEY, newSearches);
+  };
 
   const searchPhones = useCallback(async (searchQuery: string) => {
     const normalizedQuery = normalizeText(searchQuery);
@@ -59,45 +90,41 @@ export function useSearch() {
       return [];
     }
 
-    const searchResults = await Promise.all(
-      phones
-        .map(async phone => {
+    try {
+      const searchResults = phones
+        .map(phone => {
           const normalizedName = normalizeText(phone.name);
-          const normalizedProcessor = normalizeText(phone.specs.processor);
-          
           let score = 0;
           
-          // Exact match
+          // Full name exact match
           if (normalizedName === normalizedQuery) {
             score += 100;
           }
-          // Starts with query
+          // Full name starts with query
           else if (normalizedName.startsWith(normalizedQuery)) {
             score += 75;
           }
-          // Contains query
+          // Full name contains query
           else if (normalizedName.includes(normalizedQuery)) {
             score += 50;
           }
-          // Processor match
-          if (normalizedProcessor.includes(normalizedQuery)) {
-            score += 25;
-          }
-          // RAM match
-          if (normalizeText(phone.specs.ram).includes(normalizedQuery)) {
-            score += 25;
-          }
+
+          // Search in specifications
+          score += searchInSpecs(phone.specs, normalizedQuery);
+
+          // Search in individual words of the name
+          const nameWords = normalizedName.split(' ');
+          nameWords.forEach(word => {
+            if (word === normalizedQuery) {
+              score += 40;
+            } else if (word.startsWith(normalizedQuery)) {
+              score += 30;
+            } else if (word.includes(normalizedQuery)) {
+              score += 20;
+            }
+          });
 
           if (score === 0) return null;
-
-          // Get reviews from cache or storage
-          const cacheKey = generateCacheKey(CACHE_KEYS.REVIEWS, phone.id);
-          let reviews = cache.get<any[]>(cacheKey) || [];
-          if (!reviews.length) {
-            reviews = await getReviewsByPhoneId(phone.id);
-          }
-
-          const rating = getAverageRating(phone.id);
 
           return {
             score,
@@ -112,20 +139,27 @@ export function useSearch() {
                 ram: phone.specs.ram
               },
               reviews: {
-                rating,
-                count: reviews.length,
-                summary: getReviewSummary(rating, reviews.length)
+                rating: phone.rating,
+                count: phone.reviews || 0,
+                summary: getReviewSummary(phone.rating, phone.reviews || 0)
               }
             }
           };
         })
-    );
+        .filter((item): item is NonNullable<typeof item> => item !== null)
+        .sort((a, b) => b.score - a.score)
+        .map(item => item.result);
 
-    return searchResults
-      .filter(item => item !== null)
-      .sort((a, b) => b!.score - a!.score)
-      .map(item => item!.result);
-  }, []);
+      if (searchResults.length > 0) {
+        addToRecentSearches(searchQuery);
+      }
+
+      return searchResults;
+    } catch (error) {
+      console.error('Search error:', error);
+      return [];
+    }
+  }, [recentSearches]);
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
@@ -154,6 +188,10 @@ export function useSearch() {
     setQuery,
     results,
     isLoading,
-    popularSearches: POPULAR_SEARCHES
+    recentSearches,
+    clearRecentSearches: async () => {
+      setRecentSearches([]);
+      await storage.delete(RECENT_SEARCHES_KEY);
+    }
   };
 }
