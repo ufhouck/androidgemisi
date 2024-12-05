@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { phones } from '../../data/phones';
 import { PhoneCard } from '../compare/PhoneCard';
@@ -13,11 +13,27 @@ const filterChips = [
   { id: 'flagship', label: 'Amiral Gemisi', filter: 'brand' }
 ];
 
+// Function to get random phones
+function getRandomPhones(count: number) {
+  const shuffled = [...phones].sort(() => 0.5 - Math.random());
+  return shuffled.slice(0, count);
+}
+
 export function FeaturedPhones() {
   const [selectedPhones, setSelectedPhones] = useState<string[]>([]);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [featuredPhones, setFeaturedPhones] = useState(getRandomPhones(6));
   const navigate = useNavigate();
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+  // Update featured phones every hour
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFeaturedPhones(getRandomPhones(6));
+    }, 60 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handlePhoneSelect = (phoneId: string) => {
     if (selectedPhones.includes(phoneId)) {
@@ -98,7 +114,7 @@ export function FeaturedPhones() {
           "grid gap-4",
           isMobile ? "grid-cols-2" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
         )}>
-          {phones.slice(0, 6).map((phone) => (
+          {featuredPhones.map((phone) => (
             <PhoneCard
               key={phone.id}
               phone={phone}

@@ -13,6 +13,14 @@ export function PriceComparison({ model }: PriceComparisonProps) {
   const [error, setError] = useState<string | null>(null);
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
+  // Format model name for sahibinden.com URL
+  const formatSahibindenUrl = (model: string) => {
+    const [brand, ...modelParts] = model.split(' ');
+    const modelName = modelParts.join('-').toLowerCase();
+    const queryText = encodeURIComponent(model.replace(/ /g, '+'));
+    return `https://www.sahibinden.com/cep-telefonu-modeller-${brand.toLowerCase()}-${modelName}?query_text_mf=${queryText}&query_text=${queryText}`;
+  };
+
   useEffect(() => {
     async function fetchPrices() {
       try {
@@ -117,7 +125,7 @@ export function PriceComparison({ model }: PriceComparisonProps) {
         <div className="pt-4 border-t">
           <h4 className="text-sm font-medium text-gray-500 mb-3">İkinci El</h4>
           <a
-            href={`https://www.sahibinden.com/arama?query=${encodeURIComponent(model)}`}
+            href={formatSahibindenUrl(model)}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
