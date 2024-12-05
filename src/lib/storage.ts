@@ -1,4 +1,10 @@
 import { set, get, del, clear } from 'idb-keyval';
+import { Phone } from '../types/phone';
+
+interface StorageData<T> {
+  value: T;
+  expires: number | null;
+}
 
 class Storage {
   private fallbackStorage: Map<string, any>;
@@ -7,8 +13,8 @@ class Storage {
     this.fallbackStorage = new Map();
   }
 
-  async set(key: string, value: any, ttl?: number): Promise<void> {
-    const data = {
+  async set<T>(key: string, value: T, ttl?: number): Promise<void> {
+    const data: StorageData<T> = {
       value,
       expires: ttl ? Date.now() + ttl * 1000 : null
     };
@@ -22,18 +28,21 @@ class Storage {
 
   async get<T>(key: string): Promise<T | null> {
     try {
-      const data = await get(key) || this.fallbackStorage.get(key);
-      if (!data) return null;
+      const data = await get(key) as StorageData<T> | undefined;
+      const fallbackData = this.fallbackStorage.get(key) as StorageData<T> | undefined;
+      
+      const storedData = data || fallbackData;
+      if (!storedData) return null;
 
-      if (data.expires && Date.now() > data.expires) {
+      if (storedData.expires && Date.now() > storedData.expires) {
         await this.delete(key);
         return null;
       }
 
-      return data.value as T;
+      return storedData.value;
     } catch (error) {
-      const data = this.fallbackStorage.get(key);
-      return data ? data.value as T : null;
+      const fallbackData = this.fallbackStorage.get(key) as StorageData<T> | undefined;
+      return fallbackData ? fallbackData.value : null;
     }
   }
 
@@ -55,17 +64,17 @@ class Storage {
     }
   }
 
-  async getAllPhones(): Promise<any[]> {
+  async getAllPhones(): Promise<Phone[]> {
     try {
-      const phones = await this.get<any[]>('phones') || [];
-      return phones;
+      const phones = await this.get<Phone[]>('phones');
+      return phones || [];
     } catch (error) {
       console.error('Error getting phones:', error);
       return [];
     }
   }
 
-  async addPhone(phone: any): Promise<void> {
+  async addPhone(phone: Phone): Promise<void> {
     try {
       const phones = await this.getAllPhones();
       phones.push(phone);
@@ -75,7 +84,7 @@ class Storage {
     }
   }
 
-  async updatePhone(id: string, updatedPhone: any): Promise<void> {
+  async updatePhone(id: string, updatedPhone: Phone): Promise<void> {
     try {
       const phones = await this.getAllPhones();
       const index = phones.findIndex(p => p.id === id);

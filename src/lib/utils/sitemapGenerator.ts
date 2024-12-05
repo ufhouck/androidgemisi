@@ -1,39 +1,70 @@
 import { phones } from '../../data/phones';
-import { PHONE_CATALOG } from '../../data/phoneCatalog';
+import { slugifyPhoneName } from './phoneUtils';
 
-function slugify(text: string): string {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+interface SitemapUrl {
+  loc: string;
+  lastmod: string;
+  changefreq: string;
+  priority: string;
+  images?: {
+    loc: string;
+    caption: string;
+  }[];
 }
 
 export function generateSitemap(baseUrl: string): string {
-  const today = new Date().toISOString().split('T')[0];
-  
-  const urls = [
-    // Ana sayfalar
-    { url: '', priority: '1.0', changefreq: 'daily' },
-    { url: 'karsilastir', priority: '0.9', changefreq: 'daily' },
-    { url: 'yorumlar', priority: '0.8', changefreq: 'daily' },
+  const urls: SitemapUrl[] = [
+    {
+      loc: baseUrl,
+      lastmod: new Date().toISOString(),
+      changefreq: 'daily',
+      priority: '1.0'
+    },
+    {
+      loc: `${baseUrl}/karsilastir`,
+      lastmod: new Date().toISOString(),
+      changefreq: 'daily',
+      priority: '0.9'
+    },
+    {
+      loc: `${baseUrl}/yorumlar`,
+      lastmod: new Date().toISOString(),
+      changefreq: 'daily',
+      priority: '0.8'
+    }
   ];
 
-  // Telefon detay sayfaları
+  // Add phone detail pages with images
   phones.forEach(phone => {
+    const slug = slugifyPhoneName(phone.name);
     urls.push({
-      url: `telefon/${slugify(phone.name)}`,
+      loc: `${baseUrl}/telefon/${slug}`,
+      lastmod: new Date().toISOString(),
+      changefreq: 'daily',
       priority: '0.7',
-      changefreq: 'daily'
+      images: [
+        {
+          loc: `${baseUrl}/images/phones/${slug}.jpg`,
+          caption: `${phone.name} fotoğrafı`
+        }
+      ]
     });
   });
 
-  // XML oluştur
-  const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${urls.map(({ url, priority, changefreq }) => `  <url>
-    <loc>${baseUrl}${url ? '/' + url : ''}</loc>
-    <lastmod>${today}</lastmod>
-    <changefreq>${changefreq}</changefreq>
-    <priority>${priority}</priority>
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="/sitemap.xsl"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+${urls.map(url => `  <url>
+    <loc>${url.loc}</loc>
+    <lastmod>${url.lastmod}</lastmod>
+    <changefreq>${url.changefreq}</changefreq>
+    <priority>${url.priority}</priority>
+    ${url.images ? url.images.map(img => `
+    <image:image>
+      <image:loc>${img.loc}</image:loc>
+      <image:caption>${img.caption}</image:caption>
+    </image:image>`).join('') : ''}
   </url>`).join('\n')}
 </urlset>`;
-
-  return xml;
 }

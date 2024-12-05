@@ -1,5 +1,10 @@
 import { get, set, del } from 'idb-keyval';
 
+interface CacheData<T> {
+  value: T;
+  expires: number | null;
+}
+
 class BrowserCache {
   private memoryCache: Map<string, any>;
   private timeouts: Map<string, NodeJS.Timeout>;
@@ -9,7 +14,7 @@ class BrowserCache {
     this.timeouts = new Map();
   }
 
-  async set(key: string, value: any, ttl?: number): Promise<void> {
+  async set<T>(key: string, value: T, ttl?: number): Promise<void> {
     // Clear any existing timeout
     if (this.timeouts.has(key)) {
       clearTimeout(this.timeouts.get(key));
@@ -21,7 +26,7 @@ class BrowserCache {
 
     // Set in IndexedDB
     try {
-      const data = {
+      const data: CacheData<T> = {
         value,
         expires: ttl ? Date.now() + ttl * 1000 : null
       };
@@ -47,7 +52,7 @@ class BrowserCache {
 
     // Try IndexedDB
     try {
-      const data = await get(key);
+      const data = await get(key) as CacheData<T> | undefined;
       if (!data) return null;
 
       if (data.expires && Date.now() > data.expires) {
@@ -57,7 +62,7 @@ class BrowserCache {
 
       // Update memory cache
       this.memoryCache.set(key, data.value);
-      return data.value as T;
+      return data.value;
     } catch (error) {
       console.error('Error getting from cache:', error);
       return null;

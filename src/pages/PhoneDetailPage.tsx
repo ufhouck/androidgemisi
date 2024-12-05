@@ -10,22 +10,17 @@ import {
   HardDrive, 
   Gauge, 
   Camera as CameraIcon,
-  Monitor,
-  Loader2 
+  Monitor
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { ReviewsList } from '../components/reviews/ReviewsList';
 import { ReviewSummary } from '../components/reviews/ReviewSummary';
 import { PriceComparison } from '../components/price/PriceComparison';
-import { generateMockReviews } from '../data/mockReviews';
-import { Review } from '../types/review';
-import { slugifyPhoneName, generatePhoneId } from '../lib/utils/phoneUtils';
+import { slugifyPhoneName } from '../lib/utils/phoneUtils';
 
 export function PhoneDetailPage() {
   const { slug } = useParams<{ slug: string }>();
   const [isSpecsOpen, setIsSpecsOpen] = useState(true);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [activeSection, setActiveSection] = useState('specs');
   const [showTOC, setShowTOC] = useState(false);
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -36,27 +31,6 @@ export function PhoneDetailPage() {
   const headerRef = useRef<HTMLDivElement>(null);
 
   const phone = phones.find(p => slugifyPhoneName(p.name) === slug);
-
-  useEffect(() => {
-    async function loadReviews() {
-      if (phone?.name) {
-        setIsLoading(true);
-        try {
-          // Generate a consistent ID for the phone
-          const phoneId = generatePhoneId(phone.name);
-          // Generate mock reviews directly
-          const mockReviews = generateMockReviews(phoneId, phone.name);
-          setReviews(mockReviews);
-        } catch (error) {
-          console.error('Error loading reviews:', error);
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    loadReviews();
-  }, [phone?.name]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -133,7 +107,7 @@ export function PhoneDetailPage() {
 
         {/* Sticky TOC */}
         {showTOC && (
-          <div className="sticky top-0 bg-white border-b shadow-sm z-40 -mx-4 px-4 py-2">
+          <div className="sticky top-14 bg-white border-b shadow-sm z-40 -mx-4 px-4 py-2">
             <nav className="flex items-center justify-between gap-2">
               <button
                 onClick={() => scrollToSection(specsRef)}
@@ -220,17 +194,7 @@ export function PhoneDetailPage() {
               "font-semibold",
               isMobile ? "text-lg" : "text-xl"
             )}>Kullanıcı Yorumları</h2>
-            {isLoading ? (
-              <div className="flex items-center justify-center py-8 text-gray-500">
-                <Loader2 className="h-6 w-6 animate-spin mr-2" />
-                <span>Yorumlar yükleniyor...</span>
-              </div>
-            ) : (
-              <>
-                <ReviewSummary reviews={reviews} />
-                <ReviewsList reviews={reviews} />
-              </>
-            )}
+            <ReviewsList phoneModel={phone.name} />
           </div>
         </div>
       </div>

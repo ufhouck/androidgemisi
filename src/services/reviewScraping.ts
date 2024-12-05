@@ -1,7 +1,7 @@
 import { Review } from '../types/review';
 import { cache } from '../lib/cache';
 import { CACHE_KEYS, CACHE_DURATIONS, generateCacheKey } from '../lib/utils/cacheUtils';
-import { getPhoneReviews } from './reviewAnalysis';
+import { generateMockReviews } from '../data/mockReviews';
 
 export async function getAllReviews(model: string): Promise<Review[]> {
   const cacheKey = generateCacheKey(CACHE_KEYS.REVIEWS, model);
@@ -13,8 +13,9 @@ export async function getAllReviews(model: string): Promise<Review[]> {
       return cachedReviews;
     }
 
-    // Get fresh reviews
-    const reviews = await getPhoneReviews(model);
+    // Generate mock reviews with improved variety
+    const phoneId = model.toLowerCase().replace(/[^a-z0-9]+/g, '');
+    const reviews = generateMockReviews(phoneId, model);
     
     if (reviews.length > 0) {
       await cache.set(cacheKey, reviews, CACHE_DURATIONS.SHORT);
