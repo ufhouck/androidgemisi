@@ -10,7 +10,7 @@ interface ReviewSummaryCardProps {
 }
 
 export function ReviewSummaryCard({ reviews, phoneName }: ReviewSummaryCardProps) {
-  const summary = generateReviewSummary(reviews, phoneName);
+  const summary = generateReviewSummary(Array.isArray(reviews) ? reviews : [], phoneName);
   const slugify = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
 
   return (

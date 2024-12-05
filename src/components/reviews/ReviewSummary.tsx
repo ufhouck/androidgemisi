@@ -1,15 +1,18 @@
 import React from 'react';
 import { Review } from '../../types/review';
 import { Star } from 'lucide-react';
+import { calculateAverageRating } from '../../lib/utils/reviewUtils';
 
 interface ReviewSummaryProps {
   reviews: Review[];
 }
 
 export function ReviewSummary({ reviews }: ReviewSummaryProps) {
-  if (reviews.length === 0) return null;
+  if (!Array.isArray(reviews) || reviews.length === 0) {
+    return null;
+  }
 
-  const averageRating = reviews.reduce((acc, review) => acc + review.rating, 0) / reviews.length;
+  const averageRating = calculateAverageRating(reviews);
   
   const ratingCounts = reviews.reduce((acc, review) => {
     const rating = Math.floor(review.rating);

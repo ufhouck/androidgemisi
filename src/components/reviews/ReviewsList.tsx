@@ -1,13 +1,14 @@
 import React from 'react';
 import { ThumbsUp, ThumbsDown, MessageCircle } from 'lucide-react';
 import { Review } from '../../types/review';
+import { sortReviewsByDate } from '../../lib/utils/reviewUtils';
 
 interface ReviewsListProps {
   reviews: Review[];
 }
 
 export function ReviewsList({ reviews }: ReviewsListProps) {
-  if (reviews.length === 0) {
+  if (!Array.isArray(reviews) || reviews.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
         Bu telefon için henüz yorum yapılmamış.
@@ -15,9 +16,11 @@ export function ReviewsList({ reviews }: ReviewsListProps) {
     );
   }
 
+  const sortedReviews = sortReviewsByDate(reviews);
+
   return (
     <div className="space-y-6">
-      {reviews.map((review) => (
+      {sortedReviews.map((review) => (
         <div key={review.id} className="bg-white p-6 rounded-lg shadow-md">
           <div className="flex items-start justify-between mb-4">
             <div>

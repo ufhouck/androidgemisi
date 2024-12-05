@@ -21,6 +21,15 @@ interface ReviewSummary {
 }
 
 function analyzeSentiment(reviews: Review[]): SentimentAnalysis {
+  if (!Array.isArray(reviews)) {
+    console.error('Invalid reviews data:', reviews);
+    return {
+      sentiment: 'neutral',
+      score: 0,
+      aspects: {}
+    };
+  }
+
   const aspects = {
     camera: ['kamera', 'fotoğraf', 'video', 'çekim'],
     battery: ['batarya', 'pil', 'şarj'],
@@ -52,6 +61,8 @@ function analyzeSentiment(reviews: Review[]): SentimentAnalysis {
 
   const normalizedAspects = Object.entries(aspectAnalysis).reduce((acc, [aspect, counts]) => {
     const total = counts.positive + counts.negative;
+    if (total === 0) return acc;
+    
     const score = (counts.positive - counts.negative) / total;
     acc[aspect] = {
       sentiment: score > 0.2 ? 'positive' : score < -0.2 ? 'negative' : 'neutral',
@@ -68,6 +79,29 @@ function analyzeSentiment(reviews: Review[]): SentimentAnalysis {
 }
 
 export function generateReviewSummary(reviews: Review[], phoneName: string): ReviewSummary {
+  if (!Array.isArray(reviews)) {
+    console.error('Invalid reviews data:', reviews);
+    return {
+      phoneId: '',
+      phoneName,
+      overallSentiment: 'Henüz yorum yapılmamış',
+      positiveAspects: [],
+      negativeAspects: [],
+      totalReviews: 0
+    };
+  }
+
+  if (reviews.length === 0) {
+    return {
+      phoneId: '',
+      phoneName,
+      overallSentiment: 'Henüz yorum yapılmamış',
+      positiveAspects: [],
+      negativeAspects: [],
+      totalReviews: 0
+    };
+  }
+
   const analysis = analyzeSentiment(reviews);
   
   const aspectDescriptions = {

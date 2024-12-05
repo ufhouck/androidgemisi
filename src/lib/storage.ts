@@ -1,40 +1,60 @@
 import { set, get, del, clear } from 'idb-keyval';
 
 class Storage {
+  private fallbackStorage: Map<string, any>;
+
+  constructor() {
+    this.fallbackStorage = new Map();
+  }
+
   async set(key: string, value: any, ttl?: number): Promise<void> {
     const data = {
       value,
       expires: ttl ? Date.now() + ttl * 1000 : null
     };
-    await set(key, data);
+
+    try {
+      await set(key, data);
+    } catch (error) {
+      this.fallbackStorage.set(key, data);
+    }
   }
 
   async get<T>(key: string): Promise<T | null> {
     try {
-      const data = await get(key);
+      const data = await get(key) || this.fallbackStorage.get(key);
       if (!data) return null;
 
       if (data.expires && Date.now() > data.expires) {
-        await del(key);
+        await this.delete(key);
         return null;
       }
 
       return data.value as T;
     } catch (error) {
-      console.error('Storage get error:', error);
-      return null;
+      const data = this.fallbackStorage.get(key);
+      return data ? data.value as T : null;
     }
   }
 
   async delete(key: string): Promise<void> {
-    await del(key);
+    try {
+      await del(key);
+      this.fallbackStorage.delete(key);
+    } catch (error) {
+      this.fallbackStorage.delete(key);
+    }
   }
 
   async clear(): Promise<void> {
-    await clear();
+    try {
+      await clear();
+      this.fallbackStorage.clear();
+    } catch (error) {
+      this.fallbackStorage.clear();
+    }
   }
 
-  // Yeni eklenen metodlar
   async getAllPhones(): Promise<any[]> {
     try {
       const phones = await this.get<any[]>('phones') || [];
