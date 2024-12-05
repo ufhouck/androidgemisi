@@ -1,8 +1,10 @@
 export function generatePhoneId(name: string): string {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '').slice(0, 20);
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '');
 }
 
 export function slugifyPhoneName(text: string): string {
+  if (!text) return '';
+  
   return text
     .toLowerCase()
     .replace(/[+]/g, 'plus')  // Replace + with 'plus'

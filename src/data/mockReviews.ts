@@ -3,40 +3,48 @@ import { Review } from '../types/review';
 const REVIEW_TEMPLATES = {
   positive: [
     {
-      text: "PHONE_NAME harika bir telefon. Özellikle kamera performansı çok etkileyici.",
-      aspects: ["kamera", "genel"]
+      text: "PHONE_NAME harika bir telefon. Özellikle kamera performansı çok etkileyici. Gece çekimleri ve portre modu muhteşem.",
+      aspects: ["kamera", "genel"],
+      rating: 5
     },
     {
-      text: "Batarya ömrü mükemmel, tam gün kullanımda bile şarj sıkıntısı yaşamadım.",
-      aspects: ["batarya"]
+      text: "Batarya ömrü mükemmel, tam gün yoğun kullanımda bile şarj sıkıntısı yaşamadım. Hızlı şarj özelliği de çok kullanışlı.",
+      aspects: ["batarya"],
+      rating: 5
     },
     {
-      text: "Ekran kalitesi ve parlaklık seviyesi beklentilerimin üzerinde.",
-      aspects: ["ekran"]
+      text: "Ekran kalitesi ve parlaklık seviyesi beklentilerimin üzerinde. HDR desteği ile Netflix ve YouTube izlemek çok keyifli.",
+      aspects: ["ekran"],
+      rating: 4
     },
     {
-      text: "İşlemci performansı oyunlarda bile çok iyi, hiç kasma yaşamadım.",
-      aspects: ["performans"]
+      text: "İşlemci performansı oyunlarda bile çok iyi, hiç kasma yaşamadım. Çoklu görev yönetimi de sorunsuz.",
+      aspects: ["performans"],
+      rating: 5
     }
   ],
   neutral: [
     {
-      text: "PHONE_NAME fiyat/performans açısından ortalama bir telefon.",
-      aspects: ["fiyat", "performans"]
+      text: "PHONE_NAME fiyat/performans açısından ortalama bir telefon. Bazı özellikleri iyi olsa da fiyatı biraz yüksek.",
+      aspects: ["fiyat", "performans"],
+      rating: 3
     },
     {
-      text: "Kamera normal ışıkta iyi ama gece çekimleri biraz geliştirilebilir.",
-      aspects: ["kamera"]
+      text: "Kamera normal ışıkta iyi ama gece çekimleri biraz geliştirilebilir. Zoom kalitesi rakiplerinin gerisinde.",
+      aspects: ["kamera"],
+      rating: 3
     }
   ],
   negative: [
     {
-      text: "Fiyatı biraz yüksek, daha uygun olabilirdi.",
-      aspects: ["fiyat"]
+      text: "Fiyatı çok yüksek, sunduğu özellikler düşünüldüğünde daha uygun olabilirdi. Rakipleri daha iyi seçenekler sunuyor.",
+      aspects: ["fiyat"],
+      rating: 2
     },
     {
-      text: "Şarj hızı beklediğim kadar iyi değil.",
-      aspects: ["batarya"]
+      text: "Şarj hızı beklediğim kadar iyi değil. Tam şarj için yaklaşık 2 saat beklemek gerekiyor.",
+      aspects: ["batarya"],
+      rating: 2
     }
   ]
 };
@@ -46,7 +54,12 @@ const USERNAMES = [
   "Android Fan",
   "Mobil Uzmanı",
   "Telefon Gurusu",
-  "Gadget Master"
+  "Gadget Master",
+  "Tech Reviewer",
+  "Mobile Expert",
+  "Smart User",
+  "Power User",
+  "Tech Enthusiast"
 ];
 
 function generateRandomDate(daysAgo: number): string {
@@ -56,7 +69,7 @@ function generateRandomDate(daysAgo: number): string {
 }
 
 export function generateMockReviews(phoneId: string, phoneName: string): Review[] {
-  const reviewCount = Math.floor(Math.random() * 15) + 10; // 10-25 reviews
+  const reviewCount = Math.floor(Math.random() * 15) + 15; // 15-30 reviews
   const reviews: Review[] = [];
 
   for (let i = 0; i < reviewCount; i++) {
@@ -77,17 +90,17 @@ export function generateMockReviews(phoneId: string, phoneName: string): Review[
       id: `${phoneId}_${i}`,
       phoneId,
       userName: USERNAMES[Math.floor(Math.random() * USERNAMES.length)],
-      rating,
-      comment: template.text.replace('PHONE_NAME', phoneName),
-      likes: Math.floor(Math.random() * 20),
-      dislikes: Math.floor(Math.random() * 5),
-      date: generateRandomDate(30), // Last 30 days
+      rating: template.rating,
+      comment: template.text.replace(/PHONE_NAME/g, phoneName),
+      likes: Math.floor(Math.random() * 50),
+      dislikes: Math.floor(Math.random() * 10),
+      date: generateRandomDate(90), // Son 90 gün
       aspects: template.aspects
     };
 
     reviews.push(review);
   }
 
-  // Sort by date, newest first
+  // Tarihe göre sırala, en yeni en üstte
   return reviews.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 }

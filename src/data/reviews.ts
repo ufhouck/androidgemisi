@@ -2,32 +2,32 @@ import { Review } from '../types/review';
 import { storage } from '../lib/storage';
 import { generateMockReviews } from './mockReviews';
 import { cache } from '../lib/cache';
+import { phones } from './phones';
 
 export async function getReviewsByPhoneId(phoneId: string): Promise<Review[]> {
   try {
-    // Check memory cache first
+    // Önce memory cache'e bak
     const cachedReviews = cache.get<Review[]>(`reviews_${phoneId}`);
     if (cachedReviews) {
       return cachedReviews;
     }
 
-    // Check persistent storage
+    // Storage'a bak
     const storedReviews = await storage.get<Review[]>(`reviews_${phoneId}`);
-    if (storedReviews && Array.isArray(storedReviews)) {
-      cache.set(`reviews_${phoneId}`, storedReviews, 3600);
+    if (storedReviews && Array.isArray(storedReviews) && storedReviews.length > 0) {
+      cache.set(`reviews_${phoneId}`, storedReviews, 3600); // 1 saat cache
       return storedReviews;
     }
 
-    // If no reviews found, generate mock reviews
-    const phones = await storage.getAllPhones();
+    // Eğer yorum bulunamazsa mock yorumlar oluştur
     const phone = phones.find(p => p.id === phoneId);
     if (!phone) return [];
 
     const reviews = generateMockReviews(phoneId, phone.name);
     
-    // Store in both caches
+    // Her iki cache'e de kaydet
     cache.set(`reviews_${phoneId}`, reviews, 3600);
-    await storage.set(`reviews_${phoneId}`, reviews, 12 * 60 * 60);
+    await storage.set(`reviews_${phoneId}`, reviews, 12 * 60 * 60); // 12 saat
     
     return reviews;
   } catch (error) {
