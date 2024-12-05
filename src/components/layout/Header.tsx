@@ -42,12 +42,16 @@ export function Header() {
               <div className="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center">
                 <Smartphone className="h-5 w-5 text-white" />
               </div>
-              <span className="text-lg font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
-                AndroidGemisi
-              </span>
+              <div className="relative">
+                <span className="text-lg font-bold bg-gradient-to-r from-orange-600 to-orange-500 bg-clip-text text-transparent">
+                  AndroidGemisi
+                </span>
+                <span className="absolute -top-1 -right-6 text-[10px] font-medium text-orange-600 bg-orange-100 px-1 rounded">
+                  beta
+                </span>
+              </div>
             </Link>
 
-            {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-1">
               {menuItems.map(item => (
                 <Link 
@@ -104,7 +108,6 @@ export function Header() {
           </div>
         </div>
 
-        {/* Mobile Navigation */}
         {isMenuOpen && (
           <nav className="md:hidden py-2 border-t">
             <div className="space-y-1 p-1">

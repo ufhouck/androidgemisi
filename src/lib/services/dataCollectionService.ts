@@ -7,11 +7,22 @@ import { getPhoneReviews } from './reviewService';
 import { updatePhoneData } from './phoneService';
 import { Phone } from '../../types/phone';
 
+let isCollecting = false;
+
 async function processPhone(brand: string, model: string): Promise<void> {
   const fullModel = `${brand} ${model}`;
   const phoneId = generatePhoneId(fullModel);
 
   try {
+    // Check if we need to update
+    const lastUpdate = await storage.get<number>(
+      generateCacheKey(CACHE_KEYS.LAST_UPDATE, phoneId)
+    );
+    
+    if (lastUpdate && Date.now() - lastUpdate < CACHE_DURATIONS.MEDIUM) {
+      return; // Skip if recently updated
+    }
+
     // Create base phone data
     const phone: Phone = {
       id: phoneId,
@@ -45,8 +56,11 @@ async function processPhone(brand: string, model: string): Promise<void> {
     await updatePhoneData(phone);
     
     // Update last collection time
-    const updateKey = generateCacheKey(CACHE_KEYS.LAST_UPDATE, phoneId);
-    await storage.set(updateKey, Date.now(), CACHE_DURATIONS.WEEK);
+    await storage.set(
+      generateCacheKey(CACHE_KEYS.LAST_UPDATE, phoneId),
+      Date.now(),
+      CACHE_DURATIONS.WEEK
+    );
 
   } catch (error) {
     console.error(`Error processing ${fullModel}:`, error);
@@ -54,6 +68,12 @@ async function processPhone(brand: string, model: string): Promise<void> {
 }
 
 export async function startDataCollection(): Promise<void> {
+  if (isCollecting) {
+    console.log('Data collection already in progress');
+    return;
+  }
+
+  isCollecting = true;
   console.log('Starting data collection...');
 
   try {
@@ -64,9 +84,10 @@ export async function startDataCollection(): Promise<void> {
         await new Promise(resolve => setTimeout(resolve, 2000));
       }
     }
-    
-    console.log('Data collection completed');
   } catch (error) {
     console.error('Error during data collection:', error);
+  } finally {
+    isCollecting = false;
+    console.log('Data collection completed');
   }
 }

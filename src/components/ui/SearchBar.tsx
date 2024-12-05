@@ -18,7 +18,7 @@ export function SearchBar({
   onResultClick 
 }: SearchBarProps) {
   const [focused, setFocused] = useState(false);
-  const { query, setQuery, results, isLoading, popularSearches } = useSearch();
+  const { query, setQuery, results, isLoading } = useSearch();
   const [showResults, setShowResults] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -58,12 +58,18 @@ export function SearchBar({
     onResultClick?.();
   };
 
-  const handleFocus = () => {
-    setFocused(true);
-    setShowResults(true);
-    if (isMobile) {
-      inputRef.current?.focus();
-      window.scrollTo(0, 0);
+  const handleSearch = () => {
+    if (query.trim()) {
+      navigate(`/karsilastir?q=${encodeURIComponent(query)}`);
+      setShowResults(false);
+      setFocused(false);
+      onResultClick?.();
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
     }
   };
 
@@ -73,7 +79,7 @@ export function SearchBar({
         className={cn(
           "flex items-center gap-3 bg-white rounded-full transition-all duration-200 cursor-text",
           focused 
-            ? "shadow-[0_3px_10px_rgb(0,0,0,0.1)] border-transparent" 
+            ? "border border-orange-500" 
             : "border border-gray-200 hover:border-gray-300",
           isMobile ? "px-4 py-2.5" : "px-5 py-3.5"
         )}
@@ -81,7 +87,7 @@ export function SearchBar({
       >
         <Search className={cn(
           "h-5 w-5",
-          focused ? "text-gray-600" : "text-gray-400"
+          focused ? "text-orange-600" : "text-gray-400"
         )} />
         
         <input
@@ -92,9 +98,13 @@ export function SearchBar({
             setQuery(e.target.value);
             setShowResults(true);
           }}
+          onKeyDown={handleKeyDown}
           className="flex-1 bg-transparent outline-none text-base placeholder:text-gray-400"
           placeholder={placeholder}
-          onFocus={handleFocus}
+          onFocus={() => {
+            setFocused(true);
+            setShowResults(true);
+          }}
         />
 
         {!isMobile && !focused && (
@@ -142,27 +152,15 @@ export function SearchBar({
                 </button>
               ))}
             </div>
-          ) : query ? (
-            <div className="px-4 py-8 text-center text-gray-500">
-              <p>Sonuç bulunamadı</p>
-              <p className="text-sm mt-1">Farklı bir arama yapmayı deneyin</p>
-            </div>
           ) : (
-            <div className="p-4">
-              <div className="text-xs font-medium text-gray-400 mb-2">
-                POPÜLER ARAMALAR
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {popularSearches.map((search, index) => (
-                  <button
-                    key={index}
-                    className="text-left px-3 py-1.5 text-sm text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
-                    onClick={() => handleResultClick(search)}
-                  >
-                    {search}
-                  </button>
-                ))}
-              </div>
+            <div className="px-4 py-8 text-center">
+              <p className="text-gray-500 mb-2">Sonuç bulunamadı</p>
+              <button
+                onClick={handleSearch}
+                className="text-sm text-orange-600 hover:text-orange-700"
+              >
+                Tüm telefonlarda ara
+              </button>
             </div>
           )}
         </div>

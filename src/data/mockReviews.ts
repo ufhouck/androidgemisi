@@ -1,52 +1,93 @@
 import { Review } from '../types/review';
 
-// Her telefon için örnek yorumlar
-export const generateMockReviews = (phoneId: string, phoneName: string): Review[] => {
-  const reviews: Review[] = [];
-  const reviewCount = Math.floor(Math.random() * 10) + 5; // 5-15 arası yorum
-
-  const sampleComments = [
+const REVIEW_TEMPLATES = {
+  positive: [
     {
-      positive: [
-        `${phoneName} gerçekten harika bir telefon. Kamera performansı özellikle gece çekimlerinde çok başarılı.`,
-        `Batarya ömrü beklediğimden çok daha iyi. Tam gün rahatlıkla idare ediyor.`,
-        `İşlemci performansı oyunlarda bile çok iyi, hiç kasma yaşamadım.`,
-        `Ekran kalitesi muhteşem, özellikle HDR içeriklerde fark yaratıyor.`,
-        `Tasarımı çok şık ve premium hissettiriyor. Renk seçenekleri de güzel.`
-      ],
-      negative: [
-        `Fiyatı biraz yüksek, daha uygun olabilirdi.`,
-        `Şarj adaptörünün kutudan çıkmaması üzücü.`,
-        `Kamera çıkıntısı biraz fazla, masada sallanıyor.`,
-        `Ağır bir telefon, tek elle kullanımı zor.`,
-        `Hoparlör sesi biraz düşük kalıyor.`
-      ]
+      text: "PHONE_NAME harika bir telefon. Özellikle kamera performansı çok etkileyici.",
+      aspects: ["kamera", "genel"]
+    },
+    {
+      text: "Batarya ömrü mükemmel, tam gün kullanımda bile şarj sıkıntısı yaşamadım.",
+      aspects: ["batarya"]
+    },
+    {
+      text: "Ekran kalitesi ve parlaklık seviyesi beklentilerimin üzerinde.",
+      aspects: ["ekran"]
+    },
+    {
+      text: "İşlemci performansı oyunlarda bile çok iyi, hiç kasma yaşamadım.",
+      aspects: ["performans"]
     }
-  ];
+  ],
+  neutral: [
+    {
+      text: "PHONE_NAME fiyat/performans açısından ortalama bir telefon.",
+      aspects: ["fiyat", "performans"]
+    },
+    {
+      text: "Kamera normal ışıkta iyi ama gece çekimleri biraz geliştirilebilir.",
+      aspects: ["kamera"]
+    }
+  ],
+  negative: [
+    {
+      text: "Fiyatı biraz yüksek, daha uygun olabilirdi.",
+      aspects: ["fiyat"]
+    },
+    {
+      text: "Şarj hızı beklediğim kadar iyi değil.",
+      aspects: ["batarya"]
+    }
+  ]
+};
+
+const USERNAMES = [
+  "Teknoloji Sever",
+  "Android Fan",
+  "Mobil Uzmanı",
+  "Telefon Gurusu",
+  "Gadget Master"
+];
+
+function generateRandomDate(daysAgo: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() - Math.floor(Math.random() * daysAgo));
+  return date.toISOString();
+}
+
+export function generateMockReviews(phoneId: string, phoneName: string): Review[] {
+  const reviewCount = Math.floor(Math.random() * 15) + 10; // 10-25 reviews
+  const reviews: Review[] = [];
 
   for (let i = 0; i < reviewCount; i++) {
-    const rating = Math.random() > 0.7 ? 
-      Math.floor(Math.random() * 3) + 3 : // %70 ihtimalle 3-5 arası
-      Math.floor(Math.random() * 2) + 4;  // %30 ihtimalle 4-5 arası
+    const rating = Math.random() > 0.3 ? 
+      Math.floor(Math.random() * 2) + 4 : // 70% chance of 4-5 stars
+      Math.floor(Math.random() * 3) + 1;  // 30% chance of 1-3 stars
 
-    const isPositive = rating >= 4;
-    const comments = isPositive ? sampleComments[0].positive : sampleComments[0].negative;
-    const comment = comments[Math.floor(Math.random() * comments.length)];
+    let template;
+    if (rating >= 4) {
+      template = REVIEW_TEMPLATES.positive[Math.floor(Math.random() * REVIEW_TEMPLATES.positive.length)];
+    } else if (rating >= 3) {
+      template = REVIEW_TEMPLATES.neutral[Math.floor(Math.random() * REVIEW_TEMPLATES.neutral.length)];
+    } else {
+      template = REVIEW_TEMPLATES.negative[Math.floor(Math.random() * REVIEW_TEMPLATES.negative.length)];
+    }
 
-    const date = new Date();
-    date.setDate(date.getDate() - Math.floor(Math.random() * 30)); // Son 30 gün içinde
-
-    reviews.push({
+    const review: Review = {
       id: `${phoneId}_${i}`,
       phoneId,
-      userName: `Kullanıcı${Math.floor(Math.random() * 1000)}`,
+      userName: USERNAMES[Math.floor(Math.random() * USERNAMES.length)],
       rating,
-      comment,
+      comment: template.text.replace('PHONE_NAME', phoneName),
       likes: Math.floor(Math.random() * 20),
       dislikes: Math.floor(Math.random() * 5),
-      date: date.toISOString()
-    });
+      date: generateRandomDate(30), // Last 30 days
+      aspects: template.aspects
+    };
+
+    reviews.push(review);
   }
 
-  return reviews;
-};
+  // Sort by date, newest first
+  return reviews.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}

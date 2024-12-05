@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { phones } from '../data/phones';
 import { getReviewsByPhoneId, getAverageRating } from '../data/reviews';
+import { cache } from '../lib/cache';
+import { CACHE_KEYS, generateCacheKey } from '../lib/utils/cacheUtils';
 
 interface SearchResult {
   id: string;
@@ -37,15 +39,11 @@ function normalizeText(text: string): string {
     .trim();
 }
 
-function getReviewSummary(reviews: any[]) {
-  if (reviews.length === 0) return "Henüz yorum yapılmamış";
-  
-  const positiveCount = reviews.filter(r => r.rating >= 4).length;
-  const percentage = Math.round((positiveCount / reviews.length) * 100);
-  
-  if (percentage >= 80) return "Kullanıcılar çok memnun";
-  if (percentage >= 60) return "Kullanıcılar memnun";
-  if (percentage >= 40) return "Karma yorumlar";
+function getReviewSummary(rating: number, count: number): string {
+  if (count === 0) return "Henüz yorum yapılmamış";
+  if (rating >= 4.5) return "Kullanıcılar çok memnun";
+  if (rating >= 4.0) return "Kullanıcılar memnun";
+  if (rating >= 3.0) return "Karma yorumlar";
   return "İyileştirmeye açık";
 }
 
@@ -53,73 +51,80 @@ export function useSearch() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [showPopular, setShowPopular] = useState(false);
 
-  const searchPhones = useCallback((searchQuery: string) => {
+  const searchPhones = useCallback(async (searchQuery: string) => {
     const normalizedQuery = normalizeText(searchQuery);
     
     if (!normalizedQuery) {
-      setShowPopular(true);
       return [];
     }
 
-    setShowPopular(false);
-
-    return phones
-      .map(phone => {
-        const normalizedName = normalizeText(phone.name);
-        const normalizedProcessor = normalizeText(phone.specs.processor);
-        
-        let score = 0;
-        
-        // Exact match
-        if (normalizedName === normalizedQuery) {
-          score += 100;
-        }
-        // Starts with query
-        else if (normalizedName.startsWith(normalizedQuery)) {
-          score += 75;
-        }
-        // Contains query
-        else if (normalizedName.includes(normalizedQuery)) {
-          score += 50;
-        }
-        // Processor match
-        if (normalizedProcessor.includes(normalizedQuery)) {
-          score += 25;
-        }
-        // RAM match
-        if (normalizeText(phone.specs.ram).includes(normalizedQuery)) {
-          score += 25;
-        }
-
-        const reviews = getReviewsByPhoneId(phone.id);
-        const rating = getAverageRating(phone.id);
-
-        return {
-          phone,
-          score,
-          reviews: {
-            rating,
-            count: reviews.length,
-            summary: getReviewSummary(reviews)
+    const searchResults = await Promise.all(
+      phones
+        .map(async phone => {
+          const normalizedName = normalizeText(phone.name);
+          const normalizedProcessor = normalizeText(phone.specs.processor);
+          
+          let score = 0;
+          
+          // Exact match
+          if (normalizedName === normalizedQuery) {
+            score += 100;
           }
-        };
-      })
-      .filter(item => item.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .map(item => ({
-        id: item.phone.id,
-        name: item.phone.name,
-        price: {
-          tr: item.phone.price.tr
-        },
-        specs: {
-          processor: item.phone.specs.processor,
-          ram: item.phone.specs.ram
-        },
-        reviews: item.reviews
-      }));
+          // Starts with query
+          else if (normalizedName.startsWith(normalizedQuery)) {
+            score += 75;
+          }
+          // Contains query
+          else if (normalizedName.includes(normalizedQuery)) {
+            score += 50;
+          }
+          // Processor match
+          if (normalizedProcessor.includes(normalizedQuery)) {
+            score += 25;
+          }
+          // RAM match
+          if (normalizeText(phone.specs.ram).includes(normalizedQuery)) {
+            score += 25;
+          }
+
+          if (score === 0) return null;
+
+          // Get reviews from cache or storage
+          const cacheKey = generateCacheKey(CACHE_KEYS.REVIEWS, phone.id);
+          let reviews = cache.get<any[]>(cacheKey) || [];
+          if (!reviews.length) {
+            reviews = await getReviewsByPhoneId(phone.id);
+          }
+
+          const rating = getAverageRating(phone.id);
+
+          return {
+            score,
+            result: {
+              id: phone.id,
+              name: phone.name,
+              price: {
+                tr: phone.price.tr
+              },
+              specs: {
+                processor: phone.specs.processor,
+                ram: phone.specs.ram
+              },
+              reviews: {
+                rating,
+                count: reviews.length,
+                summary: getReviewSummary(rating, reviews.length)
+              }
+            }
+          };
+        })
+    );
+
+    return searchResults
+      .filter(item => item !== null)
+      .sort((a, b) => b!.score - a!.score)
+      .map(item => item!.result);
   }, []);
 
   useEffect(() => {
@@ -127,8 +132,8 @@ export function useSearch() {
 
     if (query.trim()) {
       setIsLoading(true);
-      timeoutId = setTimeout(() => {
-        const searchResults = searchPhones(query);
+      timeoutId = setTimeout(async () => {
+        const searchResults = await searchPhones(query);
         setResults(searchResults);
         setIsLoading(false);
       }, 300);
@@ -149,7 +154,6 @@ export function useSearch() {
     setQuery,
     results,
     isLoading,
-    popularSearches: POPULAR_SEARCHES,
-    showPopular
+    popularSearches: POPULAR_SEARCHES
   };
 }
